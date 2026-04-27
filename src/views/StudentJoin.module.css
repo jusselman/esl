@@ -1,0 +1,290 @@
+.root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--clr-bg);
+  padding: 1.5rem;
+}
+
+/* ── Setup ────────────────────── */
+.setupCard {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+  animation: fadeUp 0.4s ease both;
+}
+
+.roomBadge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--clr-accent-light);
+  background: var(--clr-accent-dim);
+  border: 1px solid rgba(108,99,255,0.3);
+  padding: 5px 14px;
+  border-radius: 100px;
+  margin-bottom: 0.5rem;
+}
+
+.setupTitle {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--clr-text);
+  margin: 0;
+}
+
+.setupSub {
+  font-size: 0.9rem;
+  color: var(--clr-text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.inputWrap {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.nameInput {
+  width: 100%;
+  padding: 16px 20px;
+  font-size: 1.1rem;
+  font-weight: 400;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-md);
+  color: var(--clr-text);
+  transition: border-color 0.15s;
+}
+
+.nameInput::placeholder {
+  color: var(--clr-text-dim);
+}
+
+.nameInput:focus {
+  border-color: rgba(108,99,255,0.6);
+}
+
+.error {
+  font-size: 0.8rem;
+  color: var(--clr-coral);
+  width: 100%;
+}
+
+.joinBtn {
+  width: 100%;
+  padding: 16px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--clr-bg);
+  background: linear-gradient(135deg, var(--clr-accent-light), var(--clr-green));
+  border-radius: var(--radius-md);
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 0 24px rgba(108,99,255,0.35);
+  margin-top: 0.5rem;
+}
+
+.joinBtn:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 40px rgba(108,99,255,0.5);
+}
+
+.joinBtn:active {
+  transform: scale(0.98);
+}
+
+/* ── Waiting ────────────────────── */
+.waitCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+  animation: fadeUp 0.4s ease both;
+  max-width: 320px;
+}
+
+.bigAvatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.bigEmoji {
+  font-size: 3.2rem;
+  line-height: 1;
+}
+
+.waitName {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--clr-text);
+}
+
+.waitMsg {
+  font-size: 1rem;
+  color: var(--clr-text-muted);
+  line-height: 1.7;
+}
+
+.playerCountPill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--clr-green);
+  background: rgba(46,196,169,0.1);
+  border: 1px solid rgba(46,196,169,0.25);
+  padding: 6px 14px;
+  border-radius: 100px;
+  margin-top: 0.5rem;
+}
+
+.countDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--clr-green);
+  animation: pulse 1.5s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+/* ── Topics ────────────────────── */
+.topicsHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  animation: fadeDown 0.4s ease both;
+}
+
+.smallAvatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.topicsWelcome {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--clr-text);
+}
+
+.topicsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+.topicTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 1.75rem 1rem;
+  background: var(--clr-surface);
+  border: 2px solid var(--clr-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+.topicTile:nth-child(1) { animation-delay: 0.05s; }
+.topicTile:nth-child(2) { animation-delay: 0.1s; }
+.topicTile:nth-child(3) { animation-delay: 0.15s; }
+.topicTile:nth-child(4) { animation-delay: 0.2s; }
+
+.topicTile:hover {
+  transform: scale(1.03);
+  border-color: var(--topic-color, var(--clr-accent));
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--topic-color, var(--clr-accent)) 30%, transparent);
+}
+
+.topicSelected {
+  border-color: var(--topic-color, var(--clr-accent)) !important;
+  background: color-mix(in srgb, var(--topic-color, var(--clr-accent)) 12%, var(--clr-surface));
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--topic-color, var(--clr-accent)) 30%, transparent);
+  transform: scale(1.03);
+}
+
+.topicEmoji {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.topicTitle {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--clr-text);
+  text-align: center;
+}
+
+.confirmRow {
+  margin-top: 1.5rem;
+  animation: fadeUp 0.3s ease both;
+}
+
+.confirmBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--clr-bg);
+  background: linear-gradient(135deg, var(--clr-accent-light), var(--clr-green));
+  border-radius: 100px;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 0 24px rgba(108,99,255,0.4);
+}
+
+.confirmBtn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 40px rgba(108,99,255,0.55);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.75); }
+  to { opacity: 1; transform: scale(1); }
+}
