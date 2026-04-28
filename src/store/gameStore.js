@@ -1,9 +1,9 @@
-// Simple shared state via localStorage + BroadcastChannel
-// This works when host and student are on same device/browser (demo mode)
-// Replace with Supabase/Partykit/Ably for real network multi-device use
+import { createClient } from '@supabase/supabase-js'
 
-const STORAGE_KEY = 'linguadebate_state'
-const CHANNEL_NAME = 'linguadebate_sync'
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+)
 
 export const GAME_PHASES = {
   LOBBY: 'lobby',
@@ -30,35 +30,9 @@ export const AVATARS = [
 const DEFAULT_STATE = {
   phase: GAME_PHASES.LOBBY,
   roomCode: null,
-  players: [],         // { id, name, avatarId, joinedAt }
-  topicCards: [],      // populated by AI when game starts
+  players: [],
+  topicCards: [],
   selectedTopic: null,
-}
-
-export function getState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : { ...DEFAULT_STATE }
-  } catch {
-    return { ...DEFAULT_STATE }
-  }
-}
-
-export function setState(updater) {
-  const current = getState()
-  const next = typeof updater === 'function' ? updater(current) : { ...current, ...updater }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-  // Broadcast to other tabs
-  try {
-    const channel = new BroadcastChannel(CHANNEL_NAME)
-    channel.postMessage({ type: 'STATE_UPDATE', state: next })
-    channel.close()
-  } catch { /* BroadcastChannel not available */ }
-  return next
-}
-
-export function resetState() {
-  localStorage.removeItem(STORAGE_KEY)
 }
 
 export function generateRoomCode() {
@@ -71,8 +45,46 @@ export function getRandomAvatar(takenIds = []) {
   return available[Math.floor(Math.random() * available.length)]
 }
 
-export function addPlayer(name) {
-  return setState(state => {
+// ── Read current state from Supabase ─────────────────────────────────────────
+export async function getState(roomCode) {
+  const { data, error } = await supabase
+    .from('rooms')
+    .select('state')
+    .eq('id', roomCode)
+    .maybeSingle()
+
+  if (error || !data) return { ...DEFAULT_STATE, roomCode }
+  return data.state
+}
+
+// ── Write state to Supabase ───────────────────────────────────────────────────
+export async function setState(roomCode, updater) {
+  const current = await getState(roomCode)
+  const next = typeof updater === 'function' ? updater(current) : { ...current, ...updater }
+
+  await supabase
+    .from('rooms')
+    .upsert({ id: roomCode, state: next, updated_at: new Date().toISOString() })
+
+  return next
+}
+
+// ── Initialize a fresh room ───────────────────────────────────────────────────
+export async function initRoom(roomCode) {
+  const fresh = {
+    ...DEFAULT_STATE,
+    roomCode,
+    phase: GAME_PHASES.LOBBY,
+  }
+  await supabase
+    .from('rooms')
+    .upsert({ id: roomCode, state: fresh, updated_at: new Date().toISOString() })
+  return fresh
+}
+
+// ── Add a player ──────────────────────────────────────────────────────────────
+export async function addPlayer(roomCode, name) {
+  return setState(roomCode, state => {
     const takenIds = state.players.map(p => p.avatarId)
     const avatar = getRandomAvatar(takenIds)
     const player = {
@@ -85,23 +97,23 @@ export function addPlayer(name) {
   })
 }
 
-export function useSyncedState(callback) {
-  // Returns a cleanup function; call this in useEffect
-  const handler = (e) => {
-    if (e.key === STORAGE_KEY) callback(getState())
-  }
-  window.addEventListener('storage', handler)
+// ── Subscribe to real-time state changes ──────────────────────────────────────
+export function subscribeToRoom(roomCode, callback) {
+  const channel = supabase
+    .channel(`room:${roomCode}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'rooms',
+        filter: `id=eq.${roomCode}`,
+      },
+      (payload) => {
+        if (payload.new?.state) callback(payload.new.state)
+      }
+    )
+    .subscribe()
 
-  let channel
-  try {
-    channel = new BroadcastChannel(CHANNEL_NAME)
-    channel.onmessage = (e) => {
-      if (e.data?.type === 'STATE_UPDATE') callback(e.data.state)
-    }
-  } catch { /* not available */ }
-
-  return () => {
-    window.removeEventListener('storage', handler)
-    channel?.close()
-  }
+  return () => supabase.removeChannel(channel)
 }

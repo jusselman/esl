@@ -1,6 +1,5 @@
-import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { setState, generateRoomCode, GAME_PHASES } from '../store/gameStore'
+import { initRoom, generateRoomCode, GAME_PHASES } from '../store/gameStore'
 import styles from './ActivityMenu.module.css'
 
 const ACTIVITIES = [
@@ -45,17 +44,11 @@ const ACTIVITIES = [
 export default function ActivityMenu() {
   const navigate = useNavigate()
 
-  function handleSelect(activity) {
+  async function handleSelect(activity) {
     if (activity.status !== 'ready') return
     const roomCode = generateRoomCode()
-    setState({
-      phase: GAME_PHASES.LOBBY,
-      roomCode,
-      players: [],
-      topicCards: [],
-      selectedTopic: null,
-    })
-    navigate(activity.path)
+    await initRoom(roomCode)
+    navigate(`${activity.path}?room=${roomCode}`)
   }
 
   return (

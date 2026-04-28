@@ -1,6 +1,5 @@
-import React, { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { resetState } from '../store/gameStore'
 import styles from './StartScreen.module.css'
 
 const PARTICLES = Array.from({ length: 28 }, (_, i) => ({
@@ -16,10 +15,6 @@ const PARTICLES = Array.from({ length: 28 }, (_, i) => ({
 export default function StartScreen() {
   const navigate = useNavigate()
   const canvasRef = useRef(null)
-
-  useEffect(() => {
-    resetState()
-  }, [])
 
   function handleStart() {
     navigate('/menu')

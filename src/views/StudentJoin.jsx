@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { getState, addPlayer, useSyncedState, AVATARS, GAME_PHASES } from '../store/gameStore'
+import { getState, addPlayer, subscribeToRoom, AVATARS, GAME_PHASES } from '../store/gameStore'
 import styles from './StudentJoin.module.css'
 
 const PHASES = {
-  SETUP: 'setup',       // entering name
-  WAITING: 'waiting',   // name entered, waiting for teacher
-  TOPICS: 'topics',     // teacher pressed begin, see 4 topic tiles
+  SETUP: 'setup',
+  WAITING: 'waiting',
+  TOPICS: 'topics',
 }
 
 export default function StudentJoin() {
@@ -16,46 +16,36 @@ export default function StudentJoin() {
   const [phase, setPhase] = useState(PHASES.SETUP)
   const [name, setName] = useState('')
   const [myPlayer, setMyPlayer] = useState(null)
-  const [gameState, setGameState] = useState(getState)
+  const [gameState, setGameState] = useState({ players: [], phase: GAME_PHASES.LOBBY })
   const [error, setError] = useState('')
 
-  // Sync game state
+  // Subscribe to real-time room updates
   useEffect(() => {
-    const cleanup = useSyncedState((newState) => {
-      setGameState(newState)
-    })
-    return cleanup
-  }, [])
+    if (!roomCode || roomCode === '????') return
 
-  // Poll for game phase changes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const state = getState()
-      setGameState(state)
-      if (phase === PHASES.WAITING && state.phase === GAME_PHASES.TOPIC_SELECT) {
+    getState(roomCode).then(setGameState)
+
+    const unsubscribe = subscribeToRoom(roomCode, (newState) => {
+      setGameState(newState)
+      if (newState.phase === GAME_PHASES.TOPIC_SELECT) {
         setPhase(PHASES.TOPICS)
       }
-    }, 600)
-    return () => clearInterval(interval)
-  }, [phase])
+    })
+    return unsubscribe
+  }, [roomCode])
 
-  function handleJoin() {
+  async function handleJoin() {
     const trimmed = name.trim()
-    if (!trimmed) {
-      setError('Please enter your name.')
-      return
-    }
-    if (trimmed.length < 2) {
-      setError('Name must be at least 2 characters.')
-      return
-    }
-    const state = getState()
-    // Check for duplicate name
-    if (state.players.some(p => p.name.toLowerCase() === trimmed.toLowerCase())) {
+    if (!trimmed) { setError('Please enter your name.'); return }
+    if (trimmed.length < 2) { setError('Name must be at least 2 characters.'); return }
+
+    const current = await getState(roomCode)
+    if (current.players.some(p => p.name.toLowerCase() === trimmed.toLowerCase())) {
       setError('That name is already taken. Try a different one.')
       return
     }
-    const updated = addPlayer(trimmed)
+
+    const updated = await addPlayer(roomCode, trimmed)
     const me = updated.players.find(p => p.name.toLowerCase() === trimmed.toLowerCase())
     setMyPlayer(me)
     setPhase(PHASES.WAITING)
@@ -67,12 +57,9 @@ export default function StudentJoin() {
   if (phase === PHASES.SETUP) {
     return <SetupScreen roomCode={roomCode} name={name} setName={setName} onJoin={handleJoin} error={error} />
   }
-
   if (phase === PHASES.WAITING) {
-    const playerCount = gameState.players?.length || 1
-    return <WaitingScreen avatar={avatar} name={myPlayer?.name} playerCount={playerCount} />
+    return <WaitingScreen avatar={avatar} name={myPlayer?.name} playerCount={gameState.players?.length || 1} />
   }
-
   if (phase === PHASES.TOPICS) {
     return <TopicsScreen avatar={avatar} name={myPlayer?.name} topics={gameState.topicCards || PLACEHOLDER_TOPICS} />
   }
@@ -80,7 +67,6 @@ export default function StudentJoin() {
   return null
 }
 
-// ── Setup Screen ──────────────────────────────────────────────────────────────
 function SetupScreen({ roomCode, name, setName, onJoin, error }) {
   return (
     <div className={styles.root}>
@@ -88,7 +74,6 @@ function SetupScreen({ roomCode, name, setName, onJoin, error }) {
         <div className={styles.roomBadge}>Room {roomCode}</div>
         <h1 className={styles.setupTitle}>Join the debate</h1>
         <p className={styles.setupSub}>Enter your name to get started</p>
-
         <div className={styles.inputWrap}>
           <input
             className={styles.nameInput}
@@ -101,9 +86,7 @@ function SetupScreen({ roomCode, name, setName, onJoin, error }) {
             autoFocus
           />
         </div>
-
         {error && <p className={styles.error}>{error}</p>}
-
         <button className={styles.joinBtn} onClick={onJoin}>
           Join Session
         </button>
@@ -112,7 +95,6 @@ function SetupScreen({ roomCode, name, setName, onJoin, error }) {
   )
 }
 
-// ── Waiting Screen ────────────────────────────────────────────────────────────
 function WaitingScreen({ avatar, name, playerCount }) {
   const [dots, setDots] = useState('.')
   useEffect(() => {
@@ -142,7 +124,6 @@ function WaitingScreen({ avatar, name, playerCount }) {
   )
 }
 
-// ── Topics Screen ─────────────────────────────────────────────────────────────
 const PLACEHOLDER_TOPICS = [
   { id: 1, title: 'Social Media', emoji: '📱', color: '#6C63FF' },
   { id: 2, title: 'Climate Action', emoji: '🌍', color: '#2EC4A9' },
@@ -152,7 +133,6 @@ const PLACEHOLDER_TOPICS = [
 
 function TopicsScreen({ avatar, name, topics }) {
   const [selected, setSelected] = useState(null)
-
   const displayTopics = topics.length >= 4 ? topics.slice(0, 4) : PLACEHOLDER_TOPICS
 
   return (

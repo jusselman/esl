@@ -1,37 +1,39 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
-import { getState, setState, useSyncedState, AVATARS, GAME_PHASES } from '../store/gameStore'
+import { getState, setState, subscribeToRoom, AVATARS, GAME_PHASES } from '../store/gameStore'
 import styles from './HostLobby.module.css'
 
 export default function HostLobby() {
-  const [gameState, setGameState] = useState(getState)
+  const [searchParams] = useSearchParams()
+  const roomCode = searchParams.get('room')
+
+  const [gameState, setGameState] = useState({ players: [], phase: GAME_PHASES.LOBBY })
   const [beginPulsing, setBeginPulsing] = useState(false)
 
-  // Listen for student joins from other tabs
+  // Load initial state then subscribe to real-time updates
   useEffect(() => {
-    const cleanup = useSyncedState((newState) => {
-      setGameState(newState)
-    })
-    return cleanup
-  }, [])
+  if (!roomCode) return
 
-  // Also poll localStorage in case BroadcastChannel isn't available
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setGameState(getState())
-    }, 800)
-    return () => clearInterval(interval)
-  }, [])
+  console.log('Host connecting to room:', roomCode)
+  getState(roomCode).then(state => {
+    console.log('Initial state loaded:', state)
+    setGameState(state)
+  })
 
-  const roomCode = gameState.roomCode || '----'
+  const unsubscribe = subscribeToRoom(roomCode, (newState) => {
+    console.log('Real-time update received:', newState)
+    setGameState(newState)
+  })
+  return unsubscribe
+}, [roomCode])
+
   const players = gameState.players || []
+  const joinUrl = `${window.location.protocol}//${window.location.host}/?view=student&room=${roomCode}`
 
-  // Build the student join URL
-  const joinUrl = `${window.location.origin}${window.location.pathname}?view=student&room=${roomCode}`
-
-  function handleBegin() {
+  async function handleBegin() {
     setBeginPulsing(true)
-    setState({ phase: GAME_PHASES.TOPIC_SELECT })
+    await setState(roomCode, s => ({ ...s, phase: GAME_PHASES.TOPIC_SELECT }))
     setTimeout(() => setBeginPulsing(false), 600)
   }
 
@@ -42,7 +44,6 @@ export default function HostLobby() {
       <div className={styles.orb1} />
       <div className={styles.orb2} />
 
-      {/* Header */}
       <header className={styles.header}>
         <div className={styles.logo}>
           <span className={styles.logoAccent}>LINGUA</span>DEBATE
@@ -50,7 +51,6 @@ export default function HostLobby() {
         <div className={styles.activityTag}>Debate Arena</div>
       </header>
 
-      {/* Main content */}
       <div className={styles.body}>
 
         {/* Left: QR + instructions */}
@@ -59,8 +59,8 @@ export default function HostLobby() {
             <QRCodeSVG
               value={joinUrl}
               size={200}
-              bgColor="transparent"
-              fgColor="#F0EFF8"
+              bgColor="#ffffff"
+              fgColor="#000000"
               level="M"
             />
           </div>
@@ -68,7 +68,7 @@ export default function HostLobby() {
           <div className={styles.codeBlock}>
             <div className={styles.codeLabel}>Room Code</div>
             <div className={styles.codeDigits}>
-              {roomCode.split('').map((d, i) => (
+              {(roomCode || '----').split('').map((d, i) => (
                 <span key={i} className={styles.digit}>{d}</span>
               ))}
             </div>
@@ -113,7 +113,6 @@ export default function HostLobby() {
               )
             })}
 
-            {/* Empty placeholder slots */}
             {players.length === 0 && (
               <div className={styles.emptyState}>
                 <div className={styles.emptyIcon}>👋</div>
@@ -124,7 +123,6 @@ export default function HostLobby() {
         </div>
       </div>
 
-      {/* Begin button */}
       <div className={styles.beginRow}>
         <button
           className={`${styles.beginBtn} ${players.length > 0 ? styles.beginActive : ''} ${beginPulsing ? styles.beginPulse : ''}`}
@@ -137,7 +135,9 @@ export default function HostLobby() {
           </svg>
         </button>
         <p className={styles.beginHint}>
-          {players.length === 0 ? 'Waiting for at least one student to join' : `${players.length} student${players.length > 1 ? 's' : ''} ready — press Begin when everyone is in`}
+          {players.length === 0
+            ? 'Waiting for at least one student to join'
+            : `${players.length} student${players.length > 1 ? 's' : ''} ready — press Begin when everyone is in`}
         </p>
       </div>
     </div>
