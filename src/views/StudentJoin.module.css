@@ -269,6 +269,208 @@
   box-shadow: 0 0 24px rgba(108,99,255,0.4);
 }
 
+/* ── Detail Screen ────────────────────── */
+.detailWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 420px;
+  padding: 1rem 0 2rem;
+  animation: fadeUp 0.4s ease both;
+}
+
+.backBtn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--clr-text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.5rem;
+}
+
+.backBtn:hover {
+  color: var(--clr-text);
+}
+
+.detailEmoji {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.detailTitle {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--clr-text);
+  text-align: center;
+}
+
+.detailIssue {
+  font-size: 0.88rem;
+  color: var(--clr-text-muted);
+  line-height: 1.7;
+  text-align: center;
+}
+
+.sidesLabel {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--clr-text-dim);
+  align-self: flex-start;
+}
+
+.sidesWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.sideBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: var(--clr-surface);
+  border: 2px solid var(--clr-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.sideBtn:hover {
+  border-color: var(--side-color, var(--clr-accent));
+}
+
+.sideBtnSelected {
+  border-color: var(--side-color, var(--clr-accent));
+  background: color-mix(in srgb, var(--side-color, var(--clr-accent)) 10%, var(--clr-surface));
+}
+
+.sideIcon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.sideLabel {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--clr-text);
+  line-height: 1.4;
+}
+
+/* ── Talking Points Card ────────────────────── */
+.cardWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 420px;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cardEmoji {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.cardCategory {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--clr-text-dim);
+  margin-bottom: 0.25rem;
+}
+
+.cardTopicTitle {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--clr-text);
+}
+
+.positionBadge {
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid;
+  line-height: 1.4;
+}
+
+.tipsLabel {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--clr-text-muted);
+}
+
+.tipsList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0;
+}
+
+.tipsList li {
+  font-size: 0.85rem;
+  color: var(--clr-text-muted);
+  line-height: 1.5;
+  padding-left: 1.25rem;
+  position: relative;
+}
+
+.tipsList li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--clr-accent-light);
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--clr-border);
+}
+
+.avatarSmall {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.cardName {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--clr-text);
+}
+
 .confirmBtn:hover {
   transform: scale(1.04);
   box-shadow: 0 0 40px rgba(108,99,255,0.55);
@@ -287,4 +489,151 @@
 @keyframes popIn {
   from { opacity: 0; transform: scale(0.75); }
   to { opacity: 1; transform: scale(1); }
+}
+
+/* ── You're Up Screen ────────────────────── */
+.youreUpWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+  position: relative;
+  padding: 2rem 1.5rem;
+  max-width: 380px;
+}
+
+.youreUpPulse {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(108,99,255,0.2) 0%, transparent 70%);
+  animation: pulseBg 1.5s ease infinite;
+  pointer-events: none;
+}
+
+@keyframes pulseBg {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 0.4; }
+}
+
+.youreUpEmoji {
+  font-size: 4rem;
+  line-height: 1;
+  animation: bounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes bounce {
+  0% { transform: scale(0); }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.youreUpTitle {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: var(--clr-text);
+  line-height: 1;
+  animation: fadeUp 0.5s ease both 0.1s;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, var(--clr-accent-light), var(--clr-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.youreUpSub {
+  font-size: 1rem;
+  color: var(--clr-text-muted);
+  animation: fadeUp 0.5s ease both 0.2s;
+  position: relative;
+  z-index: 1;
+}
+
+.youreUpCard {
+  width: 100%;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  animation: fadeUp 0.5s ease both 0.3s;
+  position: relative;
+  z-index: 1;
+}
+
+.youreUpTopic {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--clr-text);
+}
+
+.youreUpSide {
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-style: italic;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid;
+}
+
+.youreUpHint {
+  font-size: 0.85rem;
+  color: var(--clr-text-muted);
+  line-height: 1.6;
+  animation: fadeUp 0.5s ease both 0.4s;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Watching Screen ────────────────────── */
+.watchingWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+  max-width: 360px;
+  animation: fadeUp 0.4s ease both;
+}
+
+.watchingAvatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+}
+
+.watchingTitle {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--clr-text);
+}
+
+.watchingTopic {
+  font-size: 0.9rem;
+  color: var(--clr-text-muted);
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  padding: 8px 16px;
+  border-radius: 100px;
+}
+
+.watchingHint {
+  font-size: 0.85rem;
+  color: var(--clr-text-dim);
+  font-style: italic;
 }

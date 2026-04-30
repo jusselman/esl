@@ -1,3 +1,4 @@
+import React from 'react'
 import { Routes, Route, useSearchParams } from 'react-router-dom'
 import StartScreen from './views/StartScreen'
 import ActivityMenu from './views/ActivityMenu'

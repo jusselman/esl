@@ -1,3 +1,4 @@
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { initRoom, generateRoomCode, GAME_PHASES } from '../store/gameStore'
 import styles from './ActivityMenu.module.css'
