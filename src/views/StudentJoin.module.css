@@ -637,3 +637,19 @@
   color: var(--clr-text-dim);
   font-style: italic;
 }
+
+.nowPresentingBar {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: rgba(46,196,169,0.1);
+  border: 1px solid rgba(46,196,169,0.25);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  color: var(--clr-text-muted);
+  margin-bottom: 1rem;
+  animation: fadeDown 0.3s ease both;
+}

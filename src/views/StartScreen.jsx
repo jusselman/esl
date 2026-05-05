@@ -46,30 +46,41 @@ export default function StartScreen() {
         ))}
       </div>
 
-      {/* Grid lines */}
-      <div className={styles.grid} aria-hidden="true" />
+      {/* Subtle pattern overlay */}
+      <div className={styles.pattern} aria-hidden="true" />
 
       <main className={styles.main}>
-        <div className={styles.badge}>ESL CLASSROOM TOOL</div>
+  {/* Left: Mascot */}
+  <div className={styles.mascotWrap}>
+    <img
+      src="/turtle.png"
+      alt="WisePace mascot"
+      className={styles.mascot}
+    />
+  </div>
 
-        <h1 className={styles.title}>
-          <span className={styles.titleLine1}>LINGUA</span>
-          <span className={styles.titleLine2}>DEBATE</span>
-        </h1>
+  {/* Right: Title + CTA */}
+  <div className={styles.content}>
 
-        <p className={styles.tagline}>
-          Spark real conversation. Build critical thinkers.
-        </p>
+    <h1 className={styles.title}>
+      <span className={styles.titleLine1}>WISE</span>
+      <span className={styles.titleLine2}>PACE</span>
+    </h1>
 
-        <button className={styles.startBtn} onClick={handleStart}>
-          <span>Start Session</span>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
+    <p className={styles.tagline}>
+      Spark real conversation. Build critical thinkers.
+    </p>
 
-        <div className={styles.hint}>Press Start to choose an activity</div>
-      </main>
+    <button className={styles.startBtn} onClick={handleStart}>
+      <span>Start Session</span>
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </button>
+
+    <div className={styles.hint}>Press Start to choose an activity</div>
+  </div>
+</main>
 
       <footer className={styles.footer}>
         <span>Powered by AI</span>

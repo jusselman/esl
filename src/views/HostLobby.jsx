@@ -26,10 +26,11 @@ export default function HostLobby() {
   const selections = gameState.studentSelections || {}
   const joinUrl = `${window.location.protocol}//${window.location.host}/?view=student&room=${roomCode}`
 
-  // Students who have made a selection and haven't presented yet
+  const activePlayerIds = gameState.activePlayerIds || players.map(p => p.id)
   const readyIds = Object.keys(selections)
-  const remainingIds = readyIds.filter(id => !presentedIds.includes(id))
-  const allDone = readyIds.length > 0 && remainingIds.length === 0
+  const remainingIds = activePlayerIds.filter(id => !presentedIds.includes(id))
+  const totalActive = activePlayerIds.length
+  const allDone = totalActive > 0 && remainingIds.length === 0
   const canStartDebating = remainingIds.length > 0
 
   async function handleBegin() {
@@ -40,6 +41,7 @@ export default function HostLobby() {
       phase: GAME_PHASES.TOPIC_SELECT,
       topicCards: topics,
       studentSelections: {},
+      activePlayerIds: s.players.map(p => p.id),
     }))
     setCurrentPresenter(null)
     setPresentedIds([])
@@ -50,11 +52,21 @@ export default function HostLobby() {
     if (remainingIds.length === 0) return
     setRevealing(true)
 
-    // Pick a random student from remaining pool
     const randomId = remainingIds[Math.floor(Math.random() * remainingIds.length)]
-    const selection = selections[randomId]
 
-    // Push current presenter to Supabase so student devices update
+    const selection = selections[randomId] || (() => {
+      const player = players.find(p => p.id === randomId)
+      return {
+        playerId: player.id,
+        playerName: player.name,
+        avatarId: player.avatarId,
+        topicTitle: 'No topic selected',
+        topicEmoji: '🎲',
+        sideLabel: 'Freestyle — speak your mind!',
+        sideColor: '#9B9B9B',
+      }
+    })()
+
     await setState(roomCode, s => ({
       ...s,
       currentPresenter: selection,
@@ -62,7 +74,6 @@ export default function HostLobby() {
 
     setCurrentPresenter(selection)
     setPresentedIds(prev => [...prev, randomId])
-
     setTimeout(() => setRevealing(false), 800)
   }
 
@@ -103,7 +114,7 @@ export default function HostLobby() {
               "{currentPresenter.sideLabel}"
             </div>
             <div className={styles.presenterStats}>
-              {presentedIds.length} of {readyIds.length} presented
+              {presentedIds.length} of {totalActive} presented
               · {remainingIds.length} remaining
             </div>
           </div>
@@ -150,12 +161,12 @@ export default function HostLobby() {
           {players.length > 0 && gameState.phase === GAME_PHASES.TOPIC_SELECT && (
             <div className={styles.progressBlock}>
               <div className={styles.progressLabel}>
-                {readyIds.length} of {players.length} students ready
+                {readyIds.length} of {totalActive} students ready
               </div>
               <div className={styles.progressBar}>
                 <div
                   className={styles.progressFill}
-                  style={{ width: `${players.length > 0 ? (readyIds.length / players.length) * 100 : 0}%` }}
+                  style={{ width: `${totalActive > 0 ? (readyIds.length / totalActive) * 100 : 0}%` }}
                 />
               </div>
             </div>
@@ -248,7 +259,7 @@ export default function HostLobby() {
             : allDone
             ? 'All students have presented!'
             : canStartDebating
-            ? `${remainingIds.length} student${remainingIds.length > 1 ? 's' : ''} yet to present`
+            ? `${remainingIds.length} of ${totalActive} students yet to present`
             : `Waiting for students to choose a topic and side…`
           }
         </p>

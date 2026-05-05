@@ -65,14 +65,6 @@ const someoneElsePresenting = currentPresenter && !isPresenting
   if (phase === PHASES.WAITING) {
     return <WaitingScreen avatar={avatar} name={myPlayer?.name} playerCount={gameState.players?.length || 1} />
   }
-  if (phase === PHASES.TOPICS && currentPresenter) {
-  if (isPresenting) {
-    return <YoureUpScreen presenter={currentPresenter} avatar={avatar} />
-  }
-  if (someoneElsePresenting) {
-    return <WatchingScreen presenter={currentPresenter} avatarMap={Object.fromEntries(AVATARS.map(a => [a.id, a]))} />
-  }
-}
   if (phase === PHASES.TOPICS) {
   return (
     <TopicsScreen
@@ -81,6 +73,8 @@ const someoneElsePresenting = currentPresenter && !isPresenting
       myPlayer={myPlayer}
       roomCode={roomCode}
       topics={gameState.topicCards || PLACEHOLDER_TOPICS}
+      currentPresenter={gameState.currentPresenter}
+      avatarMap={Object.fromEntries(AVATARS.map(a => [a.id, a]))}
     />
   )
 }
@@ -152,85 +146,50 @@ const PLACEHOLDER_TOPICS = [
   { id: 4, title: 'University Life', emoji: '🎓', color: '#FF6B6B' },
 ]
 
-function TopicsScreen({ avatar, name, topics, roomCode, myPlayer }) {
+function TopicsScreen({ avatar, name, topics, roomCode, myPlayer, currentPresenter, avatarMap }) {
   const [selected, setSelected] = useState(null)
   const [screen, setScreen] = useState('topics') // 'topics' | 'detail' | 'card'
   const [chosenSide, setChosenSide] = useState(null)
+  const [committed, setCommitted] = useState(false)
+  const [committedData, setCommittedData] = useState(null)
 
   const displayTopics = topics.length >= 4 ? topics.slice(0, 4) : PLACEHOLDER_TOPICS
   const selectedTopic = displayTopics.find(t => t.id === selected)
 
-  if (screen === 'detail' && selectedTopic) {
+  // Once committed, always show the card + who is presenting
+  if (committed && committedData) {
+    const side = committedData.side
+    const topic = committedData.topic
+    const isPresenting = currentPresenter?.playerId === myPlayer?.id
+    const someoneElsePresenting = currentPresenter && !isPresenting
+
     return (
       <div className={styles.root}>
-        <div className={styles.detailWrap}>
-
-          {/* <button className={styles.backBtn} onClick={() => setScreen('topics')}>
-            ← Back
-          </button> */}
-
-          <div className={styles.detailEmoji}>{selectedTopic.emoji}</div>
-          <h2 className={styles.detailTitle}>{selectedTopic.title}</h2>
-          <p className={styles.detailIssue}>{selectedTopic.issue}</p>
-
-          <div className={styles.sidesLabel}>Choose your side:</div>
-
-          <div className={styles.sidesWrap}>
-            {selectedTopic.sides.map((side, i) => (
-              <button
-                key={i}
-                className={`${styles.sideBtn} ${chosenSide === i ? styles.sideBtnSelected : ''}`}
-                style={{ '--side-color': side.color }}
-                onClick={() => setChosenSide(i)}
-              >
-                <span className={styles.sideIcon}>{i === 0 ? '🔴' : '🟢'}</span>
-                <span className={styles.sideLabel}>{side.label}</span>
-              </button>
-            ))}
+        {/* Who is currently presenting */}
+        {someoneElsePresenting && (
+          <div className={styles.nowPresentingBar}>
+            <span>{avatarMap[currentPresenter.avatarId]?.emoji}</span>
+            <span><strong>{currentPresenter.playerName}</strong> is presenting — listen carefully, you may be next!</span>
           </div>
+        )}
+        {isPresenting && (
+          <div className={styles.nowPresentingBar} style={{ background: 'rgba(108,99,255,0.15)', borderColor: 'rgba(108,99,255,0.4)' }}>
+            🎤 <strong>It's your turn to present!</strong>
+          </div>
+        )}
+        {!currentPresenter && (
+          <div className={styles.nowPresentingBar}>
+            ⏳ Waiting for the teacher to pick the next presenter…
+          </div>
+        )}
 
-          {chosenSide !== null && (
-            <button
-              className={styles.confirmBtn}
-              onClick={async () => {
-              const side = selectedTopic.sides[chosenSide]
-              await setState(roomCode, s => ({
-                ...s,
-                studentSelections: {
-                  ...(s.studentSelections || {}),
-                  [myPlayer.id]: {
-                    playerId: myPlayer.id,
-                    playerName: myPlayer.name,
-                    avatarId: myPlayer.avatarId,
-                    topicId: selectedTopic.id,
-                    topicTitle: selectedTopic.title,
-                    topicEmoji: selectedTopic.emoji,
-                    sideLabel: side.label,
-                    sideColor: side.color,
-                  }
-                }
-              }))
-              setScreen('card')
-            }}
-            >
-              I'm ready to argue this →
-            </button>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  if (screen === 'card' && selectedTopic && chosenSide !== null) {
-    const side = selectedTopic.sides[chosenSide]
-    return (
-      <div className={styles.root}>
+        {/* Their card — stays visible the whole time */}
         <div className={styles.cardWrap}>
           <div className={styles.cardHeader}>
-            <span className={styles.cardEmoji}>{selectedTopic.emoji}</span>
+            <span className={styles.cardEmoji}>{topic.emoji}</span>
             <div>
-              <div className={styles.cardCategory}>{selectedTopic.category}</div>
-              <div className={styles.cardTopicTitle}>{selectedTopic.title}</div>
+              <div className={styles.cardCategory}>{topic.category}</div>
+              <div className={styles.cardTopicTitle}>{topic.title}</div>
             </div>
           </div>
 
@@ -256,6 +215,67 @@ function TopicsScreen({ avatar, name, topics, roomCode, myPlayer }) {
             </div>
             <span className={styles.cardName}>Good luck, {name}! 🎤</span>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (screen === 'detail' && selectedTopic) {
+    return (
+      <div className={styles.root}>
+        <div className={styles.detailWrap}>
+          <button className={styles.backBtn} onClick={() => setScreen('topics')}>
+            ← Back
+          </button>
+
+          <div className={styles.detailEmoji}>{selectedTopic.emoji}</div>
+          <h2 className={styles.detailTitle}>{selectedTopic.title}</h2>
+          <p className={styles.detailIssue}>{selectedTopic.issue}</p>
+
+          <div className={styles.sidesLabel}>Choose your side:</div>
+
+          <div className={styles.sidesWrap}>
+            {selectedTopic.sides.map((side, i) => (
+              <button
+                key={i}
+                className={`${styles.sideBtn} ${chosenSide === i ? styles.sideBtnSelected : ''}`}
+                style={{ '--side-color': side.color }}
+                onClick={() => setChosenSide(i)}
+              >
+                <span className={styles.sideIcon}>{i === 0 ? '🔴' : '🟢'}</span>
+                <span className={styles.sideLabel}>{side.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {chosenSide !== null && (
+            <button
+              className={styles.confirmBtn}
+              onClick={async () => {
+                const side = selectedTopic.sides[chosenSide]
+                await setState(roomCode, s => ({
+                  ...s,
+                  studentSelections: {
+                    ...(s.studentSelections || {}),
+                    [myPlayer.id]: {
+                      playerId: myPlayer.id,
+                      playerName: myPlayer.name,
+                      avatarId: myPlayer.avatarId,
+                      topicId: selectedTopic.id,
+                      topicTitle: selectedTopic.title,
+                      topicEmoji: selectedTopic.emoji,
+                      sideLabel: side.label,
+                      sideColor: side.color,
+                    }
+                  }
+                }))
+                setCommittedData({ topic: selectedTopic, side })
+                setCommitted(true)
+              }}
+            >
+              I'm ready to argue this →
+            </button>
+          )}
         </div>
       </div>
     )
