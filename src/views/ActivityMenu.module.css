@@ -1,165 +1,264 @@
 .root {
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 3rem 2rem;
-  background: var(--clr-bg);
+  justify-content: center;
+  padding: 2rem;
+  background: #d66e55;
   position: relative;
   overflow: hidden;
 }
 
-.orb {
+/* ── Background ─────────────────────────── */
+.orb1 {
   position: absolute;
-  width: 800px;
-  height: 400px;
+  width: 500px;
+  height: 500px;
   border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(108,99,255,0.1) 0%, transparent 70%);
-  top: -100px;
-  left: 50%;
-  transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(94,201,183,0.2) 0%, transparent 70%);
+  top: -150px;
+  left: -100px;
   pointer-events: none;
 }
 
-.header {
-  text-align: center;
-  margin-bottom: 3rem;
-  animation: fadeDown 0.5s ease both;
+.orb2 {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(27,58,92,0.15) 0%, transparent 70%);
+  bottom: -80px;
+  right: -60px;
+  pointer-events: none;
 }
 
-.logo {
+.pattern {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ── Main Layout ─────────────────────────── */
+/* 3 columns: left col + 2 card cols */
+.layout {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 1000px;
+  align-items: stretch;
+}
+
+/* ── Left Column ─────────────────────────── */
+.leftCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+/* ── Speech Bubble ───────────────────────── */
+.subtitleBubble {
+  position: relative;
+  background: #FDFAF4;
+  border: 2.5px solid #000000;
+  border-radius: 16px;
+  padding: 14px 20px;
+  box-shadow: 4px 4px 0px #000000;
   font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 1.6rem;
-  letter-spacing: 0.05em;
-  color: var(--clr-text);
-  margin-bottom: 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1B3A5C;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  text-align: center;
+  width: 100%;
+  top:120px;
 }
 
-.logoAccent {
-  color: var(--clr-accent-light);
+/* Tail points downward toward Pacey */
+.subtitleTail {
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 14px solid #000000;
 }
 
-.subtitle {
-  font-size: 1rem;
-  color: var(--clr-text-muted);
-  font-weight: 300;
+.subtitleTail::after {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: -8px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 12px solid #FDFAF4;
 }
 
+/* ── Mascot ──────────────────────────────── */
+.mascotWrap {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  filter: drop-shadow(0 6px 16px rgba(27,58,92,0.3));
+  width: 100%;
+}
+
+.mascot {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  object-fit: contain;
+}
+
+/* ── Activity Grid ───────────────────────── */
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1.25rem;
-  width: 100%;
-  max-width: 900px;
+  gap: 1rem;
+  align-content: stretch;
 }
 
-@media (max-width: 640px) {
-  .grid { grid-template-columns: 1fr; }
-}
-
+/* ── Cards ───────────────────────────────── */
 .card {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.75rem;
-  padding: 1.75rem;
-  border-radius: var(--radius-lg);
+  gap: 0.5rem;
+  padding: 1.25rem;
+  border-radius: 18px;
   text-align: left;
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
-  animation: fadeUp 0.5s ease both;
+  animation: popIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  border: 3px solid #000000;
 }
 
 .cardReady {
-  background: var(--clr-surface);
-  border: 1px solid var(--clr-border);
+  background: #FDFAF4;
   cursor: pointer;
+  box-shadow: 5px 5px 0px #000000;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
 .cardReady:hover {
-  transform: translateY(-3px);
-  border-color: rgba(108,99,255,0.5);
-  box-shadow: 0 12px 40px rgba(108,99,255,0.15);
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0px #000000;
 }
 
 .cardReady:active {
-  transform: translateY(0);
+  transform: translate(4px, 4px);
+  box-shadow: 1px 1px 0px #000000;
 }
 
 .cardSoon {
-  background: rgba(19,19,26,0.5);
-  border: 1px solid rgba(255,255,255,0.04);
+  background: rgba(253,250,244,0.35);
   cursor: not-allowed;
-  opacity: 0.55;
+  box-shadow: 4px 4px 0px rgba(0,0,0,0.3);
+  opacity: 0.7;
 }
 
+/* ── Card Icon ───────────────────────────── */
 .cardIcon {
-  font-size: 2rem;
-  line-height: 1;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 2.5px solid #000000;
+  box-shadow: 3px 3px 0px #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 800;
+  flex-shrink: 0;
 }
 
+/* ── Coming Soon Badge ───────────────────── */
 .soonBadge {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  font-size: 0.68rem;
+  top: 0.75rem;
+  right: 0.75rem;
+  font-family: var(--font-display);
+  font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: var(--clr-text-dim);
-  border: 1px solid rgba(255,255,255,0.1);
-  padding: 3px 10px;
+  color: #000000;
+  background: #f6db96;
+  border: 2px solid #000000;
+  padding: 3px 8px;
   border-radius: 100px;
+  box-shadow: 2px 2px 0px #000000;
 }
 
+/* ── Card Title ──────────────────────────── */
 .cardTitle {
   font-family: var(--font-display);
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--clr-text);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #000000;
+  letter-spacing: -0.01em;
 }
 
+/* ── Card Description ────────────────────── */
 .cardDesc {
-  font-size: 0.875rem;
-  color: var(--clr-text-muted);
-  line-height: 1.6;
-  font-weight: 300;
+  font-size: 0.78rem;
+  color: #3a3a3a;
+  line-height: 1.5;
+  font-weight: 400;
+  flex: 1;
 }
 
+/* ── Skill Tags ──────────────────────────── */
 .skills {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 0.25rem;
+  gap: 4px;
+  margin-top: 0.15rem;
 }
 
 .skill {
-  font-size: 0.7rem;
-  font-weight: 500;
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 700;
   letter-spacing: 0.06em;
-  color: var(--clr-accent-light);
-  background: var(--clr-accent-dim);
+  color: #000000;
+  background: #5ec9b7;
+  border: 2px solid #000000;
   border-radius: 100px;
-  padding: 3px 10px;
+  padding: 2px 8px;
+  box-shadow: 2px 2px 0px #000000;
 }
 
+.cardSoon .skill {
+  background: #ccc;
+}
+
+/* ── Launch Row ──────────────────────────── */
 .launchRow {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: auto;
-  padding-top: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--clr-accent-light);
+  padding-top: 0.4rem;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #000000;
+  letter-spacing: 0.04em;
 }
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+/* ── Animations ──────────────────────────── */
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
 }

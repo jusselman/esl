@@ -51,9 +51,7 @@ export default function HostLobby() {
   async function handleStartDebating() {
     if (remainingIds.length === 0) return
     setRevealing(true)
-
     const randomId = remainingIds[Math.floor(Math.random() * remainingIds.length)]
-
     const selection = selections[randomId] || (() => {
       const player = players.find(p => p.id === randomId)
       return {
@@ -61,17 +59,12 @@ export default function HostLobby() {
         playerName: player.name,
         avatarId: player.avatarId,
         topicTitle: 'No topic selected',
-        topicEmoji: '🎲',
+        topicEmoji: '',
         sideLabel: 'Freestyle — speak your mind!',
         sideColor: '#9B9B9B',
       }
     })()
-
-    await setState(roomCode, s => ({
-      ...s,
-      currentPresenter: selection,
-    }))
-
+    await setState(roomCode, s => ({ ...s, currentPresenter: selection }))
     setCurrentPresenter(selection)
     setPresentedIds(prev => [...prev, randomId])
     setTimeout(() => setRevealing(false), 800)
@@ -88,54 +81,52 @@ export default function HostLobby() {
     <div className={styles.root}>
       <div className={styles.orb1} />
       <div className={styles.orb2} />
+      <div className={styles.pattern} />
 
+      {/* Header */}
       <header className={styles.header}>
-        <div className={styles.logo}>
-          <span className={styles.logoAccent}>LINGUA</span>DEBATE
-        </div>
+        {/* <div className={styles.logo}>
+          <span className={styles.logoLine1}>PACE</span>
+          <span className={styles.logoLine2}>WISE</span>
+        </div> */}
         <div className={styles.activityTag}>Debate Arena</div>
+        <img src="/turtle.png" alt="Pacey" className={styles.headerMascot} />
       </header>
 
-      {/* Presenter Reveal */}
+      {/* Presenter Banner */}
       {currentPresenter && (
         <div className={`${styles.presenterBanner} ${revealing ? styles.presenterRevealing : ''}`}>
-          <div className={styles.presenterInner}>
-            <div className={styles.presenterLabel}>🎤 Now Presenting</div>
-            <div className={styles.presenterName}>
-              {avatarMap[currentPresenter.avatarId]?.emoji} {currentPresenter.playerName}
-            </div>
-            <div className={styles.presenterTopic}>
-              {currentPresenter.topicEmoji} {currentPresenter.topicTitle}
-            </div>
-            <div
-              className={styles.presenterSide}
-              style={{ color: currentPresenter.sideColor }}
-            >
-              "{currentPresenter.sideLabel}"
-            </div>
-            <div className={styles.presenterStats}>
-              {presentedIds.length} of {totalActive} presented
-              · {remainingIds.length} remaining
-            </div>
+          <div className={styles.presenterLabel}>Now Presenting</div>
+          <div className={styles.presenterName}>
+            {avatarMap[currentPresenter.avatarId]?.emoji} {currentPresenter.playerName}
+          </div>
+          <div className={styles.presenterTopic}>{currentPresenter.topicTitle}</div>
+          <div className={styles.presenterSide} style={{ color: currentPresenter.sideColor }}>
+            "{currentPresenter.sideLabel}"
+          </div>
+          <div className={styles.presenterStats}>
+            {presentedIds.length} of {totalActive} presented · {remainingIds.length} remaining
           </div>
         </div>
       )}
 
-      {/* All done banner */}
+      {/* All Done Banner */}
       {allDone && !currentPresenter && (
         <div className={styles.allDoneBanner}>
-          🎉 All students have presented! Great work everyone.
+          All students have presented! Great work everyone.
         </div>
       )}
 
       <div className={styles.body}>
 
-        {/* Left: QR + instructions */}
+        {/* Left: QR Panel */}
         <div className={styles.joinPanel}>
+          <div className={styles.panelTitle}>Scan to Join</div>
+
           <div className={styles.qrWrap}>
             <QRCodeSVG
               value={joinUrl}
-              size={200}
+              size={180}
               bgColor="#ffffff"
               fgColor="#000000"
               level="M"
@@ -153,11 +144,10 @@ export default function HostLobby() {
 
           <ol className={styles.instructions}>
             <li>Scan the QR code with your phone</li>
-            <li>Enter your name & tap Join</li>
+            <li>Enter your name and tap Join</li>
             <li>Choose a topic and pick your side</li>
           </ol>
 
-          {/* Selection progress */}
           {players.length > 0 && gameState.phase === GAME_PHASES.TOPIC_SELECT && (
             <div className={styles.progressBlock}>
               <div className={styles.progressLabel}>
@@ -173,7 +163,7 @@ export default function HostLobby() {
           )}
         </div>
 
-        {/* Right: Player tiles */}
+        {/* Right: Players Panel */}
         <div className={styles.playersPanel}>
           <div className={styles.playersPanelHeader}>
             <span className={styles.playerCount}>
@@ -200,13 +190,13 @@ export default function HostLobby() {
                 >
                   <div
                     className={styles.avatarCircle}
-                    style={{ background: avatar.color + '33', borderColor: avatar.color + '66' }}
+                    style={{ background: avatar.color + '33', borderColor: avatar.color }}
                   >
                     <span className={styles.avatarEmoji}>{avatar.emoji}</span>
                   </div>
                   <span className={styles.playerName}>{player.name}</span>
                   <span className={styles.playerStatus}>
-                    {isPresenting ? '🎤' : hasPresented ? '✅' : hasSelected ? '👍' : '⏳'}
+                    {isPresenting ? '★' : hasPresented ? '✓' : hasSelected ? '✦' : '...'}
                   </span>
                 </div>
               )
@@ -214,15 +204,14 @@ export default function HostLobby() {
 
             {players.length === 0 && (
               <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>👋</div>
-                <p>Waiting for students to join…</p>
+                <p>Waiting for students to join</p>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Action buttons */}
+      {/* Action Buttons */}
       <div className={styles.beginRow}>
         <button
           className={`${styles.beginBtn} ${players.length > 0 ? styles.beginActive : ''} ${beginPulsing ? styles.beginPulse : ''}`}
@@ -230,9 +219,6 @@ export default function HostLobby() {
           disabled={players.length === 0}
         >
           {gameState.phase === GAME_PHASES.TOPIC_SELECT ? 'Restart' : 'Begin Activity'}
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M7 4l8 6-8 6V4z" fill="currentColor"/>
-          </svg>
         </button>
 
         {gameState.phase === GAME_PHASES.TOPIC_SELECT && !currentPresenter && (
@@ -241,13 +227,13 @@ export default function HostLobby() {
             onClick={handleStartDebating}
             disabled={!canStartDebating}
           >
-            {allDone ? '🎉 All Done!' : '🎲 Pick a Presenter'}
+            {allDone ? 'All Done!' : 'Pick a Presenter'}
           </button>
         )}
 
         {currentPresenter && (
           <button className={`${styles.debateBtn} ${styles.debateBtnActive}`} onClick={handleNextPresenter}>
-            ⏭ Next Presenter
+            Next Presenter
           </button>
         )}
 
@@ -260,7 +246,7 @@ export default function HostLobby() {
             ? 'All students have presented!'
             : canStartDebating
             ? `${remainingIds.length} of ${totalActive} students yet to present`
-            : `Waiting for students to choose a topic and side…`
+            : 'Waiting for students to choose a topic and side…'
           }
         </p>
       </div>

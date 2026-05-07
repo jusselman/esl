@@ -28,7 +28,7 @@ export default function StartScreen() {
       <div className={styles.orb3} />
 
       {/* Floating particles */}
-      <div className={styles.particles} aria-hidden="true">
+      {/* <div className={styles.particles} aria-hidden="true">
         {PARTICLES.map(p => (
           <div
             key={p.id}
@@ -44,7 +44,7 @@ export default function StartScreen() {
             }}
           />
         ))}
-      </div>
+      </div> */}
 
       {/* Subtle pattern overlay */}
       <div className={styles.pattern} aria-hidden="true" />
@@ -63,23 +63,33 @@ export default function StartScreen() {
   <div className={styles.content}>
 
     <h1 className={styles.title}>
-      <span className={styles.titleLine1}>WISE</span>
-      <span className={styles.titleLine2}>PACE</span>
-    </h1>
+  <span className={styles.titleLine1}>
+    PACE
+    <span className={styles.sparkle} style={{ top: '-10px', right: '-18px', fontSize: '1.2rem' }}>✦</span>
+  </span>
+  <span className={styles.titleLine2}>
+    WISE
+    <span className={styles.sparkle} style={{ top: '-8px', left: '-20px', fontSize: '0.9rem', animationDelay: '0.4s' }}>✦</span>
+  </span>
+  </h1>
 
     <p className={styles.tagline}>
-      Spark real conversation. Build critical thinkers.
-    </p>
+  <span className={styles.taglineChunk}>Spark real conversation.</span>
+  <span className={styles.taglineChunk}>Build critical thinkers.</span>
+</p>
 
-    <button className={styles.startBtn} onClick={handleStart}>
-      <span>Start Session</span>
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    </button>
+<button className={styles.startBtn} onClick={handleStart}>
+  <span>Start Session</span>
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+    <path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+</button>
 
-    <div className={styles.hint}>Press Start to choose an activity</div>
-  </div>
+<div className={styles.speechBubble}>
+  <span className={styles.speechText}>Tap start to pick an activity!</span>
+  <div className={styles.speechTail} />
+</div>
+</div>
 </main>
 
       <footer className={styles.footer}>

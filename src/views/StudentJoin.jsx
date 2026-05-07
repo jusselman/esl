@@ -19,37 +19,31 @@ export default function StudentJoin() {
   const [gameState, setGameState] = useState({ players: [], phase: GAME_PHASES.LOBBY })
   const [error, setError] = useState('')
 
-  // Subscribe to real-time room updates
   useEffect(() => {
-  if (!roomCode || roomCode === '????') return
+    if (!roomCode || roomCode === '????') return
+    getState(roomCode).then(setGameState)
+    const unsubscribe = subscribeToRoom(roomCode, (newState) => {
+      setGameState(newState)
+      if (newState.phase === GAME_PHASES.TOPIC_SELECT) {
+        setPhase(PHASES.TOPICS)
+      }
+    })
+    return unsubscribe
+  }, [roomCode])
 
-  getState(roomCode).then(setGameState)
-
-  const unsubscribe = subscribeToRoom(roomCode, (newState) => {
-    setGameState(newState)
-    if (newState.phase === GAME_PHASES.TOPIC_SELECT) {
-      setPhase(PHASES.TOPICS)
-    }
-  })
-  return unsubscribe
-}, [roomCode])
-
-// Detect when this student is selected as presenter
-const currentPresenter = gameState.currentPresenter
-const isPresenting = currentPresenter?.playerId === myPlayer?.id
-const someoneElsePresenting = currentPresenter && !isPresenting
+  const currentPresenter = gameState.currentPresenter
+  const isPresenting = currentPresenter?.playerId === myPlayer?.id
+  const someoneElsePresenting = currentPresenter && !isPresenting
 
   async function handleJoin() {
     const trimmed = name.trim()
     if (!trimmed) { setError('Please enter your name.'); return }
     if (trimmed.length < 2) { setError('Name must be at least 2 characters.'); return }
-
     const current = await getState(roomCode)
     if (current.players.some(p => p.name.toLowerCase() === trimmed.toLowerCase())) {
       setError('That name is already taken. Try a different one.')
       return
     }
-
     const updated = await addPlayer(roomCode, trimmed)
     const me = updated.players.find(p => p.name.toLowerCase() === trimmed.toLowerCase())
     setMyPlayer(me)
@@ -66,34 +60,37 @@ const someoneElsePresenting = currentPresenter && !isPresenting
     return <WaitingScreen avatar={avatar} name={myPlayer?.name} playerCount={gameState.players?.length || 1} />
   }
   if (phase === PHASES.TOPICS) {
-  return (
-    <TopicsScreen
-      avatar={avatar}
-      name={myPlayer?.name}
-      myPlayer={myPlayer}
-      roomCode={roomCode}
-      topics={gameState.topicCards || PLACEHOLDER_TOPICS}
-      currentPresenter={gameState.currentPresenter}
-      avatarMap={Object.fromEntries(AVATARS.map(a => [a.id, a]))}
-    />
-  )
-}
-
+    return (
+      <TopicsScreen
+        avatar={avatar}
+        name={myPlayer?.name}
+        myPlayer={myPlayer}
+        roomCode={roomCode}
+        topics={gameState.topicCards || PLACEHOLDER_TOPICS}
+        currentPresenter={gameState.currentPresenter}
+        avatarMap={Object.fromEntries(AVATARS.map(a => [a.id, a]))}
+      />
+    )
+  }
   return null
 }
 
 function SetupScreen({ roomCode, name, setName, onJoin, error }) {
   return (
     <div className={styles.root}>
+      <div className={styles.orb1} />
+      <div className={styles.pattern} />
+
       <div className={styles.setupCard}>
+        <img src="/turtle.png" alt="Pacey" className={styles.setupMascot} />
         <div className={styles.roomBadge}>Room {roomCode}</div>
-        <h1 className={styles.setupTitle}>Join the debate</h1>
+        <h1 className={styles.setupTitle}>Join the Debate!</h1>
         <p className={styles.setupSub}>Enter your name to get started</p>
         <div className={styles.inputWrap}>
           <input
             className={styles.nameInput}
             type="text"
-            placeholder="Your name…"
+            placeholder="Your name..."
             value={name}
             maxLength={20}
             onChange={e => setName(e.target.value)}
@@ -119,16 +116,19 @@ function WaitingScreen({ avatar, name, playerCount }) {
 
   return (
     <div className={styles.root}>
+      <div className={styles.orb1} />
+      <div className={styles.pattern} />
       <div className={styles.waitCard}>
         <div
           className={styles.bigAvatar}
-          style={{ background: avatar?.color + '22', borderColor: avatar?.color + '55' }}
+          style={{ background: avatar?.color + '33', borderColor: avatar?.color }}
         >
           <span className={styles.bigEmoji}>{avatar?.emoji}</span>
         </div>
         <div className={styles.waitName}>{name}</div>
-        <div className={styles.waitMsg}>
-          You're in!<br/>Waiting for the teacher to start{dots}
+        <div className={styles.speechBubble}>
+          <span>You're in! Waiting for the teacher to start{dots}</span>
+          <div className={styles.speechTailUp} />
         </div>
         <div className={styles.playerCountPill}>
           <span className={styles.countDot} />
@@ -140,15 +140,15 @@ function WaitingScreen({ avatar, name, playerCount }) {
 }
 
 const PLACEHOLDER_TOPICS = [
-  { id: 1, title: 'Social Media', emoji: '📱', color: '#6C63FF' },
-  { id: 2, title: 'Climate Action', emoji: '🌍', color: '#2EC4A9' },
-  { id: 3, title: 'AI & Work', emoji: '🤖', color: '#F5C842' },
-  { id: 4, title: 'University Life', emoji: '🎓', color: '#FF6B6B' },
+  { id: 1, title: 'Social Media', color: '#6C63FF' },
+  { id: 2, title: 'Climate Action', color: '#2EC4A9' },
+  { id: 3, title: 'AI & Work', color: '#F5C842' },
+  { id: 4, title: 'University Life', color: '#FF6B6B' },
 ]
 
 function TopicsScreen({ avatar, name, topics, roomCode, myPlayer, currentPresenter, avatarMap }) {
   const [selected, setSelected] = useState(null)
-  const [screen, setScreen] = useState('topics') // 'topics' | 'detail' | 'card'
+  const [screen, setScreen] = useState('topics')
   const [chosenSide, setChosenSide] = useState(null)
   const [committed, setCommitted] = useState(false)
   const [committedData, setCommittedData] = useState(null)
@@ -156,7 +156,6 @@ function TopicsScreen({ avatar, name, topics, roomCode, myPlayer, currentPresent
   const displayTopics = topics.length >= 4 ? topics.slice(0, 4) : PLACEHOLDER_TOPICS
   const selectedTopic = displayTopics.find(t => t.id === selected)
 
-  // Once committed, always show the card + who is presenting
   if (committed && committedData) {
     const side = committedData.side
     const topic = committedData.topic
@@ -165,28 +164,32 @@ function TopicsScreen({ avatar, name, topics, roomCode, myPlayer, currentPresent
 
     return (
       <div className={styles.root}>
-        {/* Who is currently presenting */}
+        <div className={styles.orb1} />
+        <div className={styles.pattern} />
+
         {someoneElsePresenting && (
           <div className={styles.nowPresentingBar}>
-            <span>{avatarMap[currentPresenter.avatarId]?.emoji}</span>
-            <span><strong>{currentPresenter.playerName}</strong> is presenting — listen carefully, you may be next!</span>
+            <span className={styles.nowPresentingAvatar}>
+              {avatarMap[currentPresenter.avatarId]?.emoji}
+            </span>
+            <span>
+              <strong>{currentPresenter.playerName}</strong> is presenting — listen carefully, you may be next!
+            </span>
           </div>
         )}
         {isPresenting && (
-          <div className={styles.nowPresentingBar} style={{ background: 'rgba(108,99,255,0.15)', borderColor: 'rgba(108,99,255,0.4)' }}>
-            🎤 <strong>It's your turn to present!</strong>
+          <div className={`${styles.nowPresentingBar} ${styles.nowPresentingYou}`}>
+            <strong>It's your turn to present!</strong>
           </div>
         )}
         {!currentPresenter && (
           <div className={styles.nowPresentingBar}>
-            ⏳ Waiting for the teacher to pick the next presenter…
+            Waiting for the teacher to pick the next presenter...
           </div>
         )}
 
-        {/* Their card — stays visible the whole time */}
         <div className={styles.cardWrap}>
           <div className={styles.cardHeader}>
-            <span className={styles.cardEmoji}>{topic.emoji}</span>
             <div>
               <div className={styles.cardCategory}>{topic.category}</div>
               <div className={styles.cardTopicTitle}>{topic.title}</div>
@@ -195,12 +198,12 @@ function TopicsScreen({ avatar, name, topics, roomCode, myPlayer, currentPresent
 
           <div
             className={styles.positionBadge}
-            style={{ background: side.color + '22', borderColor: side.color + '55', color: side.color }}
+            style={{ background: side.color + '22', borderColor: side.color, color: side.color }}
           >
             Your position: {side.label}
           </div>
 
-          <div className={styles.tipsLabel}>💡 Tips for your presentation:</div>
+          <div className={styles.tipsLabel}>Tips for your presentation:</div>
           <ul className={styles.tipsList}>
             <li>Start with a clear statement of your position</li>
             <li>Give at least <strong>two reasons</strong> to support your argument</li>
@@ -210,10 +213,13 @@ function TopicsScreen({ avatar, name, topics, roomCode, myPlayer, currentPresent
           </ul>
 
           <div className={styles.cardFooter}>
-            <div className={styles.avatarSmall} style={{ background: avatar?.color + '22', borderColor: avatar?.color + '55' }}>
+            <div
+              className={styles.avatarSmall}
+              style={{ background: avatar?.color + '33', borderColor: avatar?.color }}
+            >
               {avatar?.emoji}
             </div>
-            <span className={styles.cardName}>Good luck, {name}! 🎤</span>
+            <span className={styles.cardName}>Good luck, {name}!</span>
           </div>
         </div>
       </div>
@@ -223,17 +229,16 @@ function TopicsScreen({ avatar, name, topics, roomCode, myPlayer, currentPresent
   if (screen === 'detail' && selectedTopic) {
     return (
       <div className={styles.root}>
+        <div className={styles.orb1} />
+        <div className={styles.pattern} />
         <div className={styles.detailWrap}>
           <button className={styles.backBtn} onClick={() => setScreen('topics')}>
-            ← Back
+            Back
           </button>
-
-          <div className={styles.detailEmoji}>{selectedTopic.emoji}</div>
           <h2 className={styles.detailTitle}>{selectedTopic.title}</h2>
           <p className={styles.detailIssue}>{selectedTopic.issue}</p>
 
           <div className={styles.sidesLabel}>Choose your side:</div>
-
           <div className={styles.sidesWrap}>
             {selectedTopic.sides.map((side, i) => (
               <button
@@ -242,7 +247,7 @@ function TopicsScreen({ avatar, name, topics, roomCode, myPlayer, currentPresent
                 style={{ '--side-color': side.color }}
                 onClick={() => setChosenSide(i)}
               >
-                <span className={styles.sideIcon}>{i === 0 ? '🔴' : '🟢'}</span>
+                <span className={styles.sideDot} style={{ background: side.color }} />
                 <span className={styles.sideLabel}>{side.label}</span>
               </button>
             ))}
@@ -273,7 +278,7 @@ function TopicsScreen({ avatar, name, topics, roomCode, myPlayer, currentPresent
                 setCommitted(true)
               }}
             >
-              I'm ready to argue this →
+              I'm ready to argue this
             </button>
           )}
         </div>
@@ -283,14 +288,20 @@ function TopicsScreen({ avatar, name, topics, roomCode, myPlayer, currentPresent
 
   return (
     <div className={styles.root}>
+      <div className={styles.orb1} />
+      <div className={styles.pattern} />
+
       <div className={styles.topicsHeader}>
         <div
           className={styles.smallAvatar}
-          style={{ background: avatar?.color + '22', borderColor: avatar?.color + '55' }}
+          style={{ background: avatar?.color + '33', borderColor: avatar?.color }}
         >
           {avatar?.emoji}
         </div>
-        <span className={styles.topicsWelcome}>Pick your topic, {name}</span>
+        <div className={styles.speechBubbleSmall}>
+          <span>Pick your topic, {name}!</span>
+          <div className={styles.speechTailLeft} />
+        </div>
       </div>
 
       <div className={styles.topicsGrid}>
@@ -301,7 +312,6 @@ function TopicsScreen({ avatar, name, topics, roomCode, myPlayer, currentPresent
             style={{ '--topic-color': topic.color }}
             onClick={() => setSelected(selected === topic.id ? null : topic.id)}
           >
-            <span className={styles.topicEmoji}>{topic.emoji}</span>
             <span className={styles.topicTitle}>{topic.title}</span>
           </button>
         ))}
@@ -309,68 +319,11 @@ function TopicsScreen({ avatar, name, topics, roomCode, myPlayer, currentPresent
 
       {selected && (
         <div className={styles.confirmRow}>
-          <button
-            className={styles.confirmBtn}
-            onClick={() => setScreen('detail')}
-          >
+          <button className={styles.confirmBtn} onClick={() => setScreen('detail')}>
             Choose this topic
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M3 8h10M8.5 3.5L13 8l-4.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
           </button>
         </div>
       )}
-    </div>
-  )
-}
-
-function YoureUpScreen({ presenter, avatar }) {
-  return (
-    <div className={styles.root}>
-      <div className={styles.youreUpWrap}>
-        <div className={styles.youreUpPulse} />
-        <div className={styles.youreUpEmoji}>🎤</div>
-        <h1 className={styles.youreUpTitle}>YOU'RE UP!</h1>
-        <p className={styles.youreUpSub}>Time to make your case</p>
-
-        <div className={styles.youreUpCard}>
-          <div className={styles.youreUpTopic}>
-            {presenter.topicEmoji} {presenter.topicTitle}
-          </div>
-          <div
-            className={styles.youreUpSide}
-            style={{ color: presenter.sideColor, borderColor: presenter.sideColor + '55', background: presenter.sideColor + '15' }}
-          >
-            "{presenter.sideLabel}"
-          </div>
-        </div>
-
-        <p className={styles.youreUpHint}>
-          Head to the front of the class and present your argument!
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function WatchingScreen({ presenter, avatarMap }) {
-  const avatar = avatarMap[presenter.avatarId] || AVATARS[0]
-  return (
-    <div className={styles.root}>
-      <div className={styles.watchingWrap}>
-        <div className={styles.watchingAvatar}
-          style={{ background: avatar.color + '22', borderColor: avatar.color + '55' }}
-        >
-          {avatar.emoji}
-        </div>
-        <h2 className={styles.watchingTitle}>{presenter.playerName} is presenting</h2>
-        <div className={styles.watchingTopic}>
-          {presenter.topicEmoji} {presenter.topicTitle}
-        </div>
-        <p className={styles.watchingHint}>
-          Listen carefully — you may be next!
-        </p>
-      </div>
     </div>
   )
 }
