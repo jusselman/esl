@@ -90,7 +90,7 @@ export default function HostLobby() {
           <span className={styles.logoLine2}>WISE</span>
         </div> */}
         <div className={styles.activityTag}>Debate Arena</div>
-        <img src="/turtle.png" alt="Pacey" className={styles.headerMascot} />
+        
       </header>
 
       {/* Presenter Banner */}
@@ -147,6 +147,10 @@ export default function HostLobby() {
             <li>Enter your name and tap Join</li>
             <li>Choose a topic and pick your side</li>
           </ol>
+
+          <div className={styles.mascotFooter}>
+            <img src="/karate.png" alt="Pacey" className={styles.panelMascot} />
+          </div>
 
           {players.length > 0 && gameState.phase === GAME_PHASES.TOPIC_SELECT && (
             <div className={styles.progressBlock}>

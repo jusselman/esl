@@ -100,11 +100,18 @@
   box-shadow: 2px 2px 0px #000000;
 }
 
-.headerMascot {
-  width: 70px;
+.mascotFooter {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  overflow: visible;
+}
+
+.panelMascot {
+  width: 160px;
   height: auto;
-  margin-left: auto;
-  filter: drop-shadow(0 4px 8px rgba(27,58,92,0.25));
+  filter: drop-shadow(0 4px 12px rgba(27,58,92,0.2));
+  display: block;
 }
 
 /* ── Presenter Banner ────────────────────── */

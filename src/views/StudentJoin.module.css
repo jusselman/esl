@@ -54,6 +54,7 @@
   height: auto;
   filter: drop-shadow(0 4px 8px rgba(27,58,92,0.2));
   margin-bottom: 0.25rem;
+  transform: scaleX(-1);
 }
 
 .roomBadge {
@@ -684,4 +685,56 @@
 @keyframes fadeDown {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Now Presenting Bar extensions ───────── */
+.nowPresentingBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.yourTurnText {
+  flex: 1;
+}
+
+.nowPresentingAcknowledged {
+  background: #1B3A5C;
+  border-color: #000000;
+  color: #FDFAF4;
+}
+
+/* ── GO Button ───────────────────────────── */
+.goBtn {
+  flex-shrink: 0;
+  padding: 8px 20px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #000000;
+  background: #f6db96;
+  border: 2.5px solid #000000;
+  border-radius: 100px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0px #000000;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  animation: goPulse 0.8s ease infinite;
+}
+
+.goBtn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px #000000;
+}
+
+.goBtn:active {
+  transform: translate(3px, 3px);
+  box-shadow: 1px 1px 0px #000000;
+  animation: none;
+}
+
+@keyframes goPulse {
+  0%, 100% { transform: scale(1); box-shadow: 3px 3px 0px #000000; }
+  50% { transform: scale(1.08); box-shadow: 4px 4px 0px #000000; }
 }

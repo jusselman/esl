@@ -82,7 +82,7 @@ function SetupScreen({ roomCode, name, setName, onJoin, error }) {
       <div className={styles.pattern} />
 
       <div className={styles.setupCard}>
-        <img src="/turtle.png" alt="Pacey" className={styles.setupMascot} />
+        <img src="/rockNroll.png" alt="Pacey" className={styles.setupMascot} />
         <div className={styles.roomBadge}>Room {roomCode}</div>
         <h1 className={styles.setupTitle}>Join the Debate!</h1>
         <p className={styles.setupSub}>Enter your name to get started</p>
@@ -157,74 +157,18 @@ function TopicsScreen({ avatar, name, topics, roomCode, myPlayer, currentPresent
   const selectedTopic = displayTopics.find(t => t.id === selected)
 
   if (committed && committedData) {
-    const side = committedData.side
-    const topic = committedData.topic
-    const isPresenting = currentPresenter?.playerId === myPlayer?.id
-    const someoneElsePresenting = currentPresenter && !isPresenting
-
-    return (
-      <div className={styles.root}>
-        <div className={styles.orb1} />
-        <div className={styles.pattern} />
-
-        {someoneElsePresenting && (
-          <div className={styles.nowPresentingBar}>
-            <span className={styles.nowPresentingAvatar}>
-              {avatarMap[currentPresenter.avatarId]?.emoji}
-            </span>
-            <span>
-              <strong>{currentPresenter.playerName}</strong> is presenting — listen carefully, you may be next!
-            </span>
-          </div>
-        )}
-        {isPresenting && (
-          <div className={`${styles.nowPresentingBar} ${styles.nowPresentingYou}`}>
-            <strong>It's your turn to present!</strong>
-          </div>
-        )}
-        {!currentPresenter && (
-          <div className={styles.nowPresentingBar}>
-            Waiting for the teacher to pick the next presenter...
-          </div>
-        )}
-
-        <div className={styles.cardWrap}>
-          <div className={styles.cardHeader}>
-            <div>
-              <div className={styles.cardCategory}>{topic.category}</div>
-              <div className={styles.cardTopicTitle}>{topic.title}</div>
-            </div>
-          </div>
-
-          <div
-            className={styles.positionBadge}
-            style={{ background: side.color + '22', borderColor: side.color, color: side.color }}
-          >
-            Your position: {side.label}
-          </div>
-
-          <div className={styles.tipsLabel}>Tips for your presentation:</div>
-          <ul className={styles.tipsList}>
-            <li>Start with a clear statement of your position</li>
-            <li>Give at least <strong>two reasons</strong> to support your argument</li>
-            <li>Use an example from real life or the news</li>
-            <li>End with a strong concluding sentence</li>
-            <li>Speak clearly — volume and confidence matter!</li>
-          </ul>
-
-          <div className={styles.cardFooter}>
-            <div
-              className={styles.avatarSmall}
-              style={{ background: avatar?.color + '33', borderColor: avatar?.color }}
-            >
-              {avatar?.emoji}
-            </div>
-            <span className={styles.cardName}>Good luck, {name}!</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  return (
+    <CommittedCard
+      side={committedData.side}
+      topic={committedData.topic}
+      myPlayer={myPlayer}
+      currentPresenter={currentPresenter}
+      avatarMap={avatarMap}
+      avatar={avatar}
+      name={name}
+    />
+  )
+}
 
   if (screen === 'detail' && selectedTopic) {
     return (
@@ -324,6 +268,126 @@ function TopicsScreen({ avatar, name, topics, roomCode, myPlayer, currentPresent
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+function CommittedCard({ side, topic, myPlayer, currentPresenter, avatarMap, avatar, name }) {
+  const [acknowledged, setAcknowledged] = useState(false)
+  const vibrationRef = React.useRef(null)
+
+  // Compute these internally from live props
+  const isPresenting = currentPresenter?.playerId === myPlayer?.id
+  const someoneElsePresenting = currentPresenter && !isPresenting
+
+  useEffect(() => {
+    if (isPresenting && !acknowledged) {
+      console.log('Vibration triggered for:', myPlayer?.name)
+
+      // Immediate first buzz
+      if (navigator.vibrate) navigator.vibrate([500, 300])
+
+      // Continue repeating
+      vibrationRef.current = setInterval(() => {
+        if (navigator.vibrate) navigator.vibrate([500, 300])
+      }, 800)
+    } else {
+      if (navigator.vibrate) navigator.vibrate(0)
+      if (vibrationRef.current) {
+        clearInterval(vibrationRef.current)
+        vibrationRef.current = null
+      }
+    }
+
+    return () => {
+      if (navigator.vibrate) navigator.vibrate(0)
+      if (vibrationRef.current) {
+        clearInterval(vibrationRef.current)
+        vibrationRef.current = null
+      }
+    }
+  }, [isPresenting, acknowledged])
+
+  function handleGo() {
+    if (navigator.vibrate) navigator.vibrate(0)
+    if (vibrationRef.current) {
+      clearInterval(vibrationRef.current)
+      vibrationRef.current = null
+    }
+    setAcknowledged(true)
+  }
+
+  return (
+    <div className={styles.root}>
+      <div className={styles.orb1} />
+      <div className={styles.pattern} />
+
+      {someoneElsePresenting && (
+        <div className={styles.nowPresentingBar}>
+          <span className={styles.nowPresentingAvatar}>
+            {avatarMap[currentPresenter.avatarId]?.emoji}
+          </span>
+          <span>
+            <strong>{currentPresenter.playerName}</strong> is presenting — listen carefully, you may be next!
+          </span>
+        </div>
+      )}
+
+      {isPresenting && !acknowledged && (
+        <div className={`${styles.nowPresentingBar} ${styles.nowPresentingYou}`}>
+          <strong className={styles.yourTurnText}>It's your turn to present!</strong>
+          <button className={styles.goBtn} onClick={handleGo}>
+            GO!
+          </button>
+        </div>
+      )}
+
+      {isPresenting && acknowledged && (
+        <div className={`${styles.nowPresentingBar} ${styles.nowPresentingAcknowledged}`}>
+          <strong>Head to the front and make your case!</strong>
+        </div>
+      )}
+
+      {!currentPresenter && (
+        <div className={styles.nowPresentingBar}>
+          Waiting for the teacher to pick the next presenter...
+        </div>
+      )}
+
+      <div className={styles.cardWrap}>
+        <div className={styles.cardHeader}>
+          <div>
+            <div className={styles.cardCategory}>{topic.category}</div>
+            <div className={styles.cardTopicTitle}>{topic.title}</div>
+          </div>
+        </div>
+
+        <div
+          className={styles.positionBadge}
+          style={{ background: side.color + '22', borderColor: side.color, color: side.color }}
+        >
+          Your position: {side.label}
+        </div>
+
+        <div className={styles.tipsLabel}>Tips for your presentation:</div>
+        <ul className={styles.tipsList}>
+          <li>Start with a clear statement of your position</li>
+          <li>Give at least <strong>two reasons</strong> to support your argument</li>
+          <li>Use an example from real life or the news</li>
+          <li>End with a strong concluding sentence</li>
+          <li>Speak clearly — volume and confidence matter!</li>
+        </ul>
+
+        <div className={styles.cardFooter}>
+          <div
+            className={styles.avatarSmall}
+            style={{ background: avatar?.color + '33', borderColor: avatar?.color }}
+          >
+            {avatar?.emoji}
+          </div>
+          <span className={styles.cardName}>Good luck, {name}!</span>
+        </div>
+      </div>
     </div>
   )
 }
