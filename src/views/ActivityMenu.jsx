@@ -15,6 +15,16 @@ const ACTIVITIES = [
     color: '#5ec9b7',
   },
   {
+    id: 'reading',
+    label: 'Reading Comprehension',
+    description: 'Students read multiple perspectives on a topic and write a thoughtful analysis in a timed environment.',
+    icon: '📖',
+    status: 'ready',
+    skills: ['Reading', 'Critical Thinking', 'Writing'],
+    path: '/host/reading-comprehension',
+    color: '#667eea',
+  },
+  {
     id: 'vocab',
     label: 'Word Builder',
     description: 'Collaborative vocabulary exercises with contextual examples and peer challenge rounds.',
@@ -51,9 +61,16 @@ export default function ActivityMenu() {
 
   async function handleSelect(activity) {
     if (activity.status !== 'ready') return
-    const roomCode = generateRoomCode()
-    await initRoom(roomCode)
-    navigate(`${activity.path}?room=${roomCode}`)
+
+    // For debate, generate room and navigate
+    if (activity.id === 'debate') {
+      const roomCode = generateRoomCode()
+      await initRoom(roomCode)
+      navigate(`${activity.path}?room=${roomCode}`)
+    } else if (activity.id === 'reading') {
+      // For reading comprehension, navigate to setup wizard
+      navigate(activity.path)
+    }
   }
 
 return (

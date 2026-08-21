@@ -33,6 +33,8 @@ const DEFAULT_STATE = {
   players: [],
   topicCards: [],
   selectedTopic: null,
+  activity: null,
+  activityState: {},
 }
 
 export function generateRoomCode() {
@@ -45,7 +47,6 @@ export function getRandomAvatar(takenIds = []) {
   return available[Math.floor(Math.random() * available.length)]
 }
 
-// ── Read current state from Supabase ─────────────────────────────────────────
 export async function getState(roomCode) {
   const { data, error } = await supabase
     .from('rooms')
@@ -57,7 +58,6 @@ export async function getState(roomCode) {
   return data.state
 }
 
-// ── Write state to Supabase ───────────────────────────────────────────────────
 export async function setState(roomCode, updater) {
   const current = await getState(roomCode)
   const next = typeof updater === 'function' ? updater(current) : { ...current, ...updater }
@@ -69,12 +69,17 @@ export async function setState(roomCode, updater) {
   return next
 }
 
-// ── Initialize a fresh room ───────────────────────────────────────────────────
-export async function initRoom(roomCode) {
+export async function initRoom(roomCode, activityData = {}) {
   const fresh = {
     ...DEFAULT_STATE,
     roomCode,
     phase: GAME_PHASES.LOBBY,
+    activity: activityData.activity || null,
+    activityState: {
+      topic: activityData.topic || null,
+      timeLimit: activityData.timeLimit || null,
+      startedAt: new Date().toISOString(),
+    },
   }
   await supabase
     .from('rooms')
@@ -82,7 +87,6 @@ export async function initRoom(roomCode) {
   return fresh
 }
 
-// ── Add a player ──────────────────────────────────────────────────────────────
 export async function addPlayer(roomCode, name) {
   return setState(roomCode, state => {
     const takenIds = state.players.map(p => p.avatarId)
@@ -97,7 +101,6 @@ export async function addPlayer(roomCode, name) {
   })
 }
 
-// ── Subscribe to real-time state changes ──────────────────────────────────────
 export function subscribeToRoom(roomCode, callback) {
   const channel = supabase
     .channel(`room:${roomCode}`)
@@ -111,6 +114,97 @@ export function subscribeToRoom(roomCode, callback) {
       },
       (payload) => {
         if (payload.new?.state) callback(payload.new.state)
+      }
+    )
+    .subscribe()
+
+  return () => supabase.removeChannel(channel)
+}
+
+export async function submitReadingResponse(roomCode, studentId, studentName, responseText, timeSpentSeconds) {
+  const { data, error } = await supabase
+    .from('reading_responses')
+    .insert({
+      room_id: roomCode,
+      student_id: studentId,
+      student_name: studentName,
+      response_text: responseText,
+      time_spent_seconds: timeSpentSeconds,
+      word_count: responseText.trim().split(/\s+/).length,
+      submitted_at: new Date().toISOString(),
+    })
+    .select()
+
+  if (error) console.error('Error submitting response:', error)
+  return data?.[0] || null
+}
+
+export async function submitGrading(roomCode, studentId, rubricScores, feedback = {}) {
+  const totalScore = Object.values(rubricScores).reduce((sum, score) => sum + (parseInt(score) || 0), 0)
+
+  const { data, error } = await supabase
+    .from('gradings')
+    .upsert({
+      room_id: roomCode,
+      student_id: studentId,
+      rubric_scores: rubricScores,
+      feedback,
+      total_score: totalScore,
+      graded_at: new Date().toISOString(),
+    })
+    .select()
+
+  if (error) console.error('Error submitting grading:', error)
+  return data?.[0] || null
+}
+
+export async function getGrading(roomCode, studentId) {
+  const { data, error } = await supabase
+    .from('gradings')
+    .select('*')
+    .eq('room_id', roomCode)
+    .eq('student_id', studentId)
+    .maybeSingle()
+
+  if (error) console.error('Error fetching grading:', error)
+  return data || null
+}
+
+export async function getGradingsForRoom(roomCode) {
+  const { data, error } = await supabase
+    .from('gradings')
+    .select('*')
+    .eq('room_id', roomCode)
+    .order('graded_at', { ascending: true })
+
+  if (error) console.error('Error fetching gradings:', error)
+  return data || []
+}
+
+export async function getResponsesForRoom(roomCode) {
+  const { data, error } = await supabase
+    .from('reading_responses')
+    .select('*')
+    .eq('room_id', roomCode)
+    .order('submitted_at', { ascending: true })
+
+  if (error) console.error('Error fetching responses:', error)
+  return data || []
+}
+
+export function subscribeToReadingResponses(roomCode, callback) {
+  const channel = supabase
+    .channel(`reading:${roomCode}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'reading_responses',
+        filter: `room_id=eq.${roomCode}`,
+      },
+      (payload) => {
+        if (payload.new) callback(payload.new)
       }
     )
     .subscribe()

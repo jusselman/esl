@@ -1,0 +1,386 @@
+.root {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.orb1, .orb2 {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.1;
+  filter: blur(40px);
+}
+
+.orb1 {
+  width: 400px;
+  height: 400px;
+  background: #2EC4A9;
+  top: -100px;
+  left: -100px;
+}
+
+.orb2 {
+  width: 300px;
+  height: 300px;
+  background: #FF6B6B;
+  bottom: -50px;
+  right: -50px;
+}
+
+.pattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(255,255,255,0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255,255,255,0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.header {
+  position: relative;
+  z-index: 1;
+  padding: 20px 32px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.activityTag {
+  display: inline-block;
+  background: rgba(46, 196, 169, 0.2);
+  color: #2EC4A9;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.topicTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.body {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 24px;
+  padding: 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+  height: calc(100vh - 100px);
+}
+
+.joinPanel {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.panelTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+}
+
+.qrWrap {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  border: 2px solid #f0f0f0;
+}
+
+.codeBlock {
+  background: #f8f8f8;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+
+.codeLabel {
+  font-size: 12px;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.codeDigits {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 4px;
+}
+
+.digit {
+  background: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  min-width: 36px;
+  text-align: center;
+  border: 1px solid #e0e0e0;
+}
+
+.instructions {
+  list-style: decimal;
+  padding-left: 20px;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.instructions li {
+  margin-bottom: 8px;
+}
+
+.mascotFooter {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.panelMascot {
+  max-width: 100%;
+  height: auto;
+  max-height: 120px;
+}
+
+.submissionsPanel {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.submissionsPanelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.timerBox {
+  background: #f8f8f8;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 32px;
+  font-weight: 700;
+  font-family: 'Monaco', 'Courier New', monospace;
+  color: #333;
+}
+
+.submissionCount {
+  font-size: 14px;
+  color: #999;
+  text-align: right;
+}
+
+.submissionCards {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.submissionCard {
+  background: #f8f8f8;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: cardIn 0.3s ease;
+  cursor: default;
+  transition: all 0.3s ease;
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.submissionCard_submitted {
+  background: rgba(46, 196, 169, 0.1);
+  border-color: #2EC4A9;
+}
+
+.cardAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  border: 2px solid;
+}
+
+.cardName {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  word-break: break-word;
+}
+
+.cardStatus {
+  font-size: 20px;
+  color: #999;
+}
+
+.submissionCard_submitted .cardStatus {
+  color: #2EC4A9;
+}
+
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: #999;
+  text-align: center;
+}
+
+.emptyState p {
+  margin: 0;
+}
+
+.allSubmittedBanner {
+  background: rgba(46, 196, 169, 0.1);
+  border: 2px solid #2EC4A9;
+  color: #2EC4A9;
+  padding: 12px 16px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.gradeBtn {
+  padding: 12px 20px;
+  background: #FF6B6B;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.gradeBtn_active {
+  background: #FF6B6B;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.gradeBtn_active:active {
+  transform: scale(0.98);
+}
+
+.gradeBtn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (max-width: 1000px) {
+  .body {
+    grid-template-columns: 1fr;
+    padding: 16px;
+    gap: 16px;
+    height: auto;
+  }
+
+  .joinPanel,
+  .submissionsPanel {
+    min-height: 400px;
+  }
+
+  .submissionCards {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .topicTitle {
+    font-size: 18px;
+  }
+
+  .joinPanel,
+  .submissionsPanel {
+    padding: 16px;
+    min-height: auto;
+  }
+
+  .codeDigits {
+    font-size: 18px;
+  }
+
+  .timerBox {
+    font-size: 24px;
+    padding: 8px 12px;
+  }
+
+  .submissionCards {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+  }
+
+  .cardAvatar {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .cardName {
+    font-size: 11px;
+  }
+}
