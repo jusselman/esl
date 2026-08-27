@@ -1,59 +1,78 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
-import { getState, subscribeToRoom, AVATARS } from '../store/gameStore'
+import { getState, subscribeToRoom, getResponsesForRoom, subscribeToReadingResponses, AVATARS } from '../store/gameStore'
 import Timer from '../components/Timer'
 import styles from './ReadingComprehensionHost.module.css'
 
-/**
- * ReadingComprehensionHost
- * Teacher's classroom view for reading comprehension activity
- *
- * Shows:
- * - QR code for students to join
- * - Room code
- * - Countdown timer (synchronized with student timers)
- * - Student submission cards as they arrive
- * - Cannot open responses (prevents class distraction)
- */
 export default function ReadingComprehensionHost() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const roomCode = params.get('room')
 
   const [gameState, setGameState] = useState(null)
-  const [selectedSubmission, setSelectedSubmission] = useState(null)
+  const [responses, setResponses] = useState([])
 
   useEffect(() => {
     if (!roomCode) return
 
-    getState(roomCode).then(setGameState)
-    const unsubscribe = subscribeToRoom(roomCode, setGameState)
-    return unsubscribe
+    // Fetch game state
+    getState(roomCode).then(state => {
+      setGameState(state)
+    })
+
+    // Fetch initial responses
+    getResponsesForRoom(roomCode).then(initialResponses => {
+      setResponses(initialResponses)
+    })
+
+    // Subscribe to game state changes
+    const unsubscribeRoom = subscribeToRoom(roomCode, setGameState)
+
+    // Subscribe to new responses
+    const unsubscribeResponses = subscribeToReadingResponses(roomCode, (newResponse) => {
+      setResponses(prev => {
+        // Avoid duplicates
+        const exists = prev.some(r => r.id === newResponse.id)
+        return exists ? prev : [...prev, newResponse]
+      })
+    })
+
+    return () => {
+      unsubscribeRoom?.()
+      unsubscribeResponses?.()
+    }
   }, [roomCode])
 
   if (!gameState) {
-    return <div className={styles.root}>Loading...</div>
+    return (
+      <div className={styles.root}>
+        <div className={styles.loading}>Loading activity...</div>
+      </div>
+    )
   }
 
-  const { players = [], activityState = {} } = gameState
-  const { topic, timeLimit } = activityState
-  const studentResponses = gameState.studentResponses || {}
-  const joinUrl = `${window.location.protocol}//${window.location.host}/?view=student&room=${roomCode}`
-  const submittedCount = Object.keys(studentResponses).length
+  const { activityState = {} } = gameState
+  const { topic, timeLimit, startedAt } = activityState
+  const joinUrl = `http://10.0.0.151:5173/?view=student&room=${roomCode}`
   const avatarMap = Object.fromEntries(AVATARS.map(a => [a.id, a]))
 
-  // Calculate end time from time limit
-  const startedAt = new Date(activityState.startedAt).getTime()
-  const endsAt = startedAt + (timeLimit * 1000)
+  // Calculate times
+  const startTime = startedAt ? new Date(startedAt).getTime() : Date.now()
+  const endTime = startTime + (timeLimit * 60 * 1000)
+  const elapsedMs = Date.now() - startTime
+  const elapsedSecs = Math.floor(elapsedMs / 1000)
+  const remainingSecs = Math.max(0, Math.floor((endTime - Date.now()) / 1000))
 
   const handleGradeClick = () => {
     navigate(`/admin/grading/${roomCode}`)
   }
 
-  const handleTimerComplete = () => {
-    // Timer ended - all responses should be submitted by now
-  }
+  // Show all players who joined, but highlight those who submitted
+  const allPlayers = gameState.players || []
+  const submittedStudentIds = new Set(responses.map(r => r.student_id))
+  const studentCount = responses.length
+  const allSubmitted = remainingSecs === 0 || (allPlayers.length > 0 && allPlayers.length === responses.length)
 
   return (
     <div className={styles.root}>
@@ -64,11 +83,22 @@ export default function ReadingComprehensionHost() {
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.activityTag}>Reading Comprehension</div>
-        <h2 className={styles.topicTitle}>{topic?.title || 'Loading...'}</h2>
       </header>
 
+      {/* Topic Banner */}
+      {topic && (
+        <div className={styles.topicBanner}>
+          <div className={styles.topicLabel}>Current Topic</div>
+          <div className={styles.topicTitle}>{topic.title}</div>
+          <div className={styles.topicStats}>
+            {topic.perspectives?.length || 0} perspectives · {timeLimit} minute{timeLimit > 1 ? 's' : ''}
+          </div>
+        </div>
+      )}
+
       <div className={styles.body}>
-        {/* Left: QR + Instructions */}
+        
+        {/* Left: QR Panel */}
         <div className={styles.joinPanel}>
           <div className={styles.panelTitle}>Scan to Join</div>
 
@@ -92,78 +122,90 @@ export default function ReadingComprehensionHost() {
           </div>
 
           <ol className={styles.instructions}>
-            <li>Students scan the QR code</li>
-            <li>They tap all perspectives to read</li>
-            <li>Then write and submit their response</li>
+            <li>Scan the QR code</li>
+            <li>Enter your name</li>
+            <li>Read perspectives</li>
+            <li>Write response</li>
           </ol>
 
+          <div className={styles.timerBox}>
+            <div className={styles.timerLabel}>Time Remaining</div>
+            <div className={`${styles.timer} ${remainingSecs <= 30 ? styles.timerWarning : ''}`}>
+              {Math.floor(remainingSecs / 60)}:{String(remainingSecs % 60).padStart(2, '0')}
+            </div>
+          </div>
+
           <div className={styles.mascotFooter}>
-            <img src="/karate.png" alt="Pacey" className={styles.panelMascot} />
+            <img src="/reclining.png" alt="Pacey" className={styles.panelMascot} />
           </div>
         </div>
 
-        {/* Right: Submissions + Timer */}
+        {/* Right: Submissions Panel */}
         <div className={styles.submissionsPanel}>
           <div className={styles.submissionsPanelHeader}>
-            <div className={styles.timerBox}>
-              <Timer
-                startedAt={startedAt}
-                endsAt={endsAt}
-                onComplete={handleTimerComplete}
-                showAsLarge={true}
-              />
-            </div>
-            <div className={styles.submissionCount}>
-              {submittedCount} of {players.length} students submitted
+            <span className={styles.submissionCount}>
+              {studentCount}/{allPlayers.length} submitted
+            </span>
+            <div className={`${styles.liveIndicator} ${allPlayers.length > 0 ? styles.livePulse : ''}`}>
+              <span className={styles.liveDot} />
+              LIVE
             </div>
           </div>
 
-          <div className={styles.submissionCards}>
-            {players.length === 0 && (
+          <div className={styles.submissionGrid}>
+            {allPlayers.length > 0 ? (
+              allPlayers.map((player, i) => {
+                const hasSubmitted = submittedStudentIds.has(player.id)
+                const avatar = avatarMap[player.avatarId] || AVATARS[0]
+                return (
+                  <div
+                    key={player.id}
+                    className={`${styles.submissionTile} ${!hasSubmitted ? styles.submissionTilePending : ''}`}
+                    style={{ animationDelay: `${i * 0.05}s`, opacity: hasSubmitted ? 1 : 0.7 }}
+                  >
+                    <div
+                      className={styles.avatarCircle}
+                      style={{ background: avatar.color + '33', borderColor: avatar.color }}
+                    >
+                      <span className={styles.avatarEmoji}>{avatar.emoji}</span>
+                    </div>
+                    <span className={styles.studentName}>{player.name}</span>
+                    <span className={styles.submissionStatus}>{hasSubmitted ? '✓' : '…'}</span>
+                  </div>
+                )
+              })
+            ) : (
               <div className={styles.emptyState}>
-                <p>Waiting for students to join...</p>
+                <p>Waiting for students...</p>
               </div>
             )}
-
-            {players.map((player, i) => {
-              const avatar = avatarMap[player.avatarId] || AVATARS[0]
-              const hasSubmitted = !!studentResponses[player.id]
-
-              return (
-                <div
-                  key={player.id}
-                  className={`${styles.submissionCard} ${hasSubmitted ? styles.submissionCard_submitted : ''}`}
-                  style={{ animationDelay: `${i * 0.05}s` }}
-                >
-                  <div
-                    className={styles.cardAvatar}
-                    style={{ background: avatar.color + '33', borderColor: avatar.color }}
-                  >
-                    <span className={styles.avatarEmoji}>{avatar.emoji}</span>
-                  </div>
-                  <span className={styles.cardName}>{player.name}</span>
-                  <span className={styles.cardStatus}>
-                    {hasSubmitted ? '✓' : '...'}
-                  </span>
-                </div>
-              )
-            })}
           </div>
 
-          {submittedCount === players.length && players.length > 0 && (
+          {allSubmitted && allPlayers.length > 0 && (
             <div className={styles.allSubmittedBanner}>
-              All students have submitted! Ready to grade.
+              All responses submitted! Ready to grade.
             </div>
           )}
-
-          <button
-            className={`${styles.gradeBtn} ${submittedCount > 0 ? styles.gradeBtn_active : ''}`}
-            onClick={handleGradeClick}
-            disabled={submittedCount === 0}
-          >
-            Grade Responses →
-          </button>
         </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className={styles.actionRow}>
+        <button
+          className={`${styles.gradeBtn} ${allSubmitted ? styles.gradeBtnActive : ''}`}
+          onClick={handleGradeClick}
+          disabled={studentCount === 0}
+        >
+          Grade Responses
+        </button>
+
+        <p className={styles.actionHint}>
+          {allSubmitted && allPlayers.length > 0
+            ? `${studentCount} student${studentCount !== 1 ? 's' : ''} submitted — ready to grade`
+            : remainingSecs > 0
+            ? `Activity in progress — ${studentCount}/${allPlayers.length} responses so far`
+            : 'Time\'s up! All responses collected.'}
+        </p>
       </div>
     </div>
   )

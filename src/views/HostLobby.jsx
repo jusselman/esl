@@ -24,7 +24,7 @@ export default function HostLobby() {
 
   const players = gameState.players || []
   const selections = gameState.studentSelections || {}
-  const joinUrl = `${window.location.protocol}//${window.location.host}/?view=student&room=${roomCode}`
+  const joinUrl = `http://10.0.0.151:5173/?view=student&room=${roomCode}`
 
   const activePlayerIds = gameState.activePlayerIds || players.map(p => p.id)
   const readyIds = Object.keys(selections)

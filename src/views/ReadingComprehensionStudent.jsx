@@ -25,6 +25,7 @@ export default function ReadingComprehensionStudent() {
   const [myPlayer, setMyPlayer] = useState(null)
   const [tappedPerspectives, setTappedPerspectives] = useState(new Set())
   const [responseText, setResponseText] = useState('')
+  const [submissionTime, setSubmissionTime] = useState(null)
 
   useEffect(() => {
     if (!roomCode || roomCode === '????') return
@@ -47,7 +48,7 @@ export default function ReadingComprehensionStudent() {
   }
 
   const { activityState = {} } = gameState
-  const { topic, timeLimit } = activityState
+  const { topic, timeLimit, startedAt } = activityState
   if (!topic) {
     return <div className={styles.root}>Waiting for activity to begin...</div>
   }
@@ -58,12 +59,12 @@ export default function ReadingComprehensionStudent() {
 
   // Determine target word count based on time limit
   let targetWords = 20
-  if (timeLimit === 300) targetWords = 100
-  if (timeLimit === 600) targetWords = 200
+  if (timeLimit === 5) targetWords = 100
+  if (timeLimit === 10) targetWords = 200
 
-  // Calculate timer values
-  const startedAt = new Date(activityState.startedAt).getTime()
-  const endsAt = startedAt + (timeLimit * 1000)
+  // Calculate timer values (timeLimit is in minutes, convert to milliseconds)
+  const startedAtMs = new Date(startedAt).getTime()
+  const endsAtMs = startedAtMs + (timeLimit * 60 * 1000)
 
   const handlePerspectiveTap = (perspectiveId) => {
     setTappedPerspectives(prev => new Set([...prev, perspectiveId]))
@@ -81,12 +82,17 @@ export default function ReadingComprehensionStudent() {
       return
     }
 
+    // Calculate elapsed time
+    const elapsedMs = Date.now() - startedAtMs
+    const elapsedSeconds = Math.floor(elapsedMs / 1000)
+    setSubmissionTime(elapsedSeconds)
+
     await submitReadingResponse(
       roomCode,
       myPlayer.id,
       myPlayer.name,
       responseText,
-      0
+      elapsedSeconds
     )
 
     setPhase('submitted')
@@ -94,12 +100,16 @@ export default function ReadingComprehensionStudent() {
 
   const handleTimerComplete = async () => {
     if (phase === 'writing' && responseText.trim()) {
+      const elapsedMs = Date.now() - startedAtMs
+      const elapsedSeconds = Math.floor(elapsedMs / 1000)
+      setSubmissionTime(elapsedSeconds)
+
       await submitReadingResponse(
         roomCode,
         myPlayer.id,
         myPlayer.name,
         responseText,
-        0
+        elapsedSeconds
       )
       setPhase('submitted')
     }
@@ -111,8 +121,8 @@ export default function ReadingComprehensionStudent() {
       <div className={styles.root}>
         <div className={styles.timer}>
           <Timer
-            startedAt={startedAt}
-            endsAt={endsAt}
+            startedAt={startedAtMs}
+            endsAt={endsAtMs}
             onComplete={handleTimerComplete}
             showAsLarge={false}
           />
@@ -159,8 +169,8 @@ export default function ReadingComprehensionStudent() {
             <h2 className={styles.writingTitle}>{topic.title}</h2>
             <div className={styles.timer}>
               <Timer
-                startedAt={startedAt}
-                endsAt={endsAt}
+                startedAt={startedAtMs}
+                endsAt={endsAtMs}
                 onComplete={handleTimerComplete}
                 showAsLarge={false}
               />
@@ -213,6 +223,12 @@ export default function ReadingComprehensionStudent() {
               <span className={styles.statLabel}>Words:</span>
               <span className={styles.statValue}>{wordCount}</span>
             </div>
+            {submissionTime !== null && (
+              <div className={styles.stat}>
+                <span className={styles.statLabel}>Time Spent:</span>
+                <span className={styles.statValue}>{Math.floor(submissionTime / 60)}:{String(submissionTime % 60).padStart(2, '0')}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

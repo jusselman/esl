@@ -5,9 +5,9 @@ import { getRandomTopicByTimeLimit, getTopicsByTimeLimit } from './readingTopics
 import styles from './ReadingComprehensionSetup.module.css'
 
 const TIME_OPTIONS = [
-  { value: 1, label: '1 min', complexity: 'simple' },
-  { value: 5, label: '5 min', complexity: 'intermediate' },
-  { value: 10, label: '10 min', complexity: 'advanced' },
+  { value: 1, label: '1 min', complexity: 'simple', seconds: 60 },
+  { value: 5, label: '5 min', complexity: 'intermediate', seconds: 300 },
+  { value: 10, label: '10 min', complexity: 'advanced', seconds: 600 },
 ]
 
 const TOPIC_SOURCES = [
@@ -32,21 +32,27 @@ export default function ReadingComprehensionSetup() {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [selectedTime, setSelectedTime] = useState(null)
+  const [selectedTimeSeconds, setSelectedTimeSeconds] = useState(null)
   const [selectedSource, setSelectedSource] = useState(null)
   const [selectedTopic, setSelectedTopic] = useState(null)
   const [customTopic, setCustomTopic] = useState({
     title: '',
-    perspectives: [{ name: '', title: '', viewpoint: '' }],
+    perspectives: [
+      { name: '', title: '', viewpoint: '' },
+      { name: '', title: '', viewpoint: '' },
+    ],
   })
 
-  const availableTopics = selectedTime ? getTopicsByTimeLimit(selectedTime) : []
+  const availableTopics = selectedTimeSeconds ? getTopicsByTimeLimit(selectedTimeSeconds) : []
 
-  const handleTimeSelect = (time) => {
-    setSelectedTime(time)
+  const handleTimeSelect = (timeOption) => {
+    setSelectedTime(timeOption.value)
+    setSelectedTimeSeconds(timeOption.seconds)
   }
 
   const handleSourceSelect = (source) => {
     setSelectedSource(source)
+    setSelectedTopic(null)
   }
 
   const handleTopicSelect = (topic) => {
@@ -58,10 +64,12 @@ export default function ReadingComprehensionSetup() {
       setStep(2)
     } else if (step === 2 && selectedSource) {
       if (selectedSource === 'random') {
-        const randomTopic = getRandomTopicByTimeLimit(selectedTime)
+        const randomTopic = getRandomTopicByTimeLimit(selectedTimeSeconds)
         setSelectedTopic(randomTopic)
         setStep(3)
-      } else {
+      } else if (selectedSource === 'select' && selectedTopic) {
+        setStep(3)
+      } else if (selectedSource === 'custom') {
         setStep(3)
       }
     }
@@ -88,11 +96,40 @@ export default function ReadingComprehensionSetup() {
       timeLimit: selectedTime,
     })
 
-    navigate(`/host/reading-comprehension?room=${roomCode}`)
+    navigate(`/reading-comprehension/host?room=${roomCode}`)
+  }
+
+  const handleCustomPerspectiveChange = (index, field, value) => {
+    const updatedPerspectives = [...customTopic.perspectives]
+    updatedPerspectives[index][field] = value
+    setCustomTopic({ ...customTopic, perspectives: updatedPerspectives })
+  }
+
+  const addCustomPerspective = () => {
+    setCustomTopic({
+      ...customTopic,
+      perspectives: [...customTopic.perspectives, { name: '', title: '', viewpoint: '' }],
+    })
+  }
+
+  const removeCustomPerspective = (index) => {
+    if (customTopic.perspectives.length > 1) {
+      const updatedPerspectives = customTopic.perspectives.filter((_, i) => i !== index)
+      setCustomTopic({ ...customTopic, perspectives: updatedPerspectives })
+    }
+  }
+
+  const isStep2Valid = () => {
+    if (selectedSource === 'select') return !!selectedTopic
+    if (selectedSource === 'random') return true
+    if (selectedSource === 'custom') return customTopic.title.trim().length > 0
+    return false
   }
 
   return (
     <div className={styles.root}>
+      <img src="/turtleReading.png" alt="Turtle Reading" className={styles.turtleImage} />
+
       <div className={styles.container}>
         <h1>Reading Comprehension Setup</h1>
         <p className={styles.subtitle}>
@@ -108,7 +145,7 @@ export default function ReadingComprehensionSetup() {
               <button
                 key={opt.value}
                 className={`${styles.timeBtn} ${selectedTime === opt.value ? styles.timeBtn_active : ''}`}
-                onClick={() => handleTimeSelect(opt.value)}
+                onClick={() => handleTimeSelect(opt)}
               >
                 <div className={styles.timeBtnLabel}>{opt.label}</div>
                 <div className={styles.timeBtnComplexity}>{opt.complexity}</div>
@@ -130,6 +167,8 @@ export default function ReadingComprehensionSetup() {
                 <div className={styles.sourceBtnDesc}>{source.description}</div>
               </button>
             ))}
+
+            {/* Topic Dropdown for Select */}
             {selectedSource === 'select' && (
               <div className={styles.topicList}>
                 <label htmlFor="topicSelect">Choose a topic:</label>
@@ -148,6 +187,78 @@ export default function ReadingComprehensionSetup() {
                     </option>
                   ))}
                 </select>
+              </div>
+            )}
+
+            {/* Custom Topic Form */}
+            {selectedSource === 'custom' && (
+              <div className={styles.customForm}>
+                <div className={styles.formGroup}>
+                  <label htmlFor="customTitle">Topic Title:</label>
+                  <input
+                    id="customTitle"
+                    type="text"
+                    className={styles.textInput}
+                    placeholder="e.g., Should social media be regulated by governments?"
+                    value={customTopic.title}
+                    onChange={(e) => setCustomTopic({ ...customTopic, title: e.target.value })}
+                  />
+                </div>
+
+                <div className={styles.perspectivesSection}>
+                  <h4>Perspectives (minimum 2)</h4>
+                  {customTopic.perspectives.map((perspective, index) => (
+                    <div key={index} className={styles.perspectiveForm}>
+                      <div className={styles.formGroup}>
+                        <label>Person's Name:</label>
+                        <input
+                          type="text"
+                          className={styles.textInput}
+                          placeholder="e.g., Dr. Jane Smith"
+                          value={perspective.name}
+                          onChange={(e) => handleCustomPerspectiveChange(index, 'name', e.target.value)}
+                        />
+                      </div>
+
+                      <div className={styles.formGroup}>
+                        <label>Their Title/Role:</label>
+                        <input
+                          type="text"
+                          className={styles.textInput}
+                          placeholder="e.g., Technology Ethicist"
+                          value={perspective.title}
+                          onChange={(e) => handleCustomPerspectiveChange(index, 'title', e.target.value)}
+                        />
+                      </div>
+
+                      <div className={styles.formGroup}>
+                        <label>Their Viewpoint:</label>
+                        <textarea
+                          className={styles.textarea}
+                          placeholder="What is their perspective on the topic?"
+                          value={perspective.viewpoint}
+                          onChange={(e) => handleCustomPerspectiveChange(index, 'viewpoint', e.target.value)}
+                          rows="3"
+                        />
+                      </div>
+
+                      {customTopic.perspectives.length > 1 && (
+                        <button
+                          className={styles.removeBtn}
+                          onClick={() => removeCustomPerspective(index)}
+                        >
+                          Remove Perspective
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  {customTopic.perspectives.length < 5 && (
+                    <button className={styles.addBtn} onClick={addCustomPerspective}>
+                      + Add Another Perspective
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -193,8 +304,7 @@ export default function ReadingComprehensionSetup() {
               onClick={handleNext}
               disabled={
                 (step === 1 && !selectedTime) ||
-                (step === 2 && !selectedSource) ||
-                (step === 2 && selectedSource === 'select' && !selectedTopic)
+                (step === 2 && !isStep2Valid())
               }
             >
               Next

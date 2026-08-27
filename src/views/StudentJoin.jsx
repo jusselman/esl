@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { getState, addPlayer, subscribeToRoom, AVATARS, GAME_PHASES, setState } from '../store/gameStore'
 import styles from './StudentJoin.module.css'
 
@@ -11,6 +11,7 @@ const PHASES = {
 
 export default function StudentJoin() {
   const [params] = useSearchParams()
+  const navigate = useNavigate()
   const roomCode = params.get('room') || '????'
 
   const [phase, setPhase] = useState(PHASES.SETUP)
@@ -18,11 +19,40 @@ export default function StudentJoin() {
   const [myPlayer, setMyPlayer] = useState(null)
   const [gameState, setGameState] = useState({ players: [], phase: GAME_PHASES.LOBBY })
   const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (!roomCode || roomCode === '????') return
-    getState(roomCode).then(setGameState)
+    console.log('=== StudentJoin Debug ===')
+    console.log('Room code:', roomCode)
+    console.log('URL:', window.location.href)
+    console.log('View param:', params.get('view'))
+  }, [])
+
+  useEffect(() => {
+    if (!roomCode || roomCode === '????') {
+      console.error('Invalid room code:', roomCode)
+      setError('Invalid room code. Please scan the QR code again.')
+      setIsLoading(false)
+      return
+    }
+
+    console.log('Fetching state for room:', roomCode)
+    
+    getState(roomCode)
+      .then(state => {
+        console.log('Game state loaded:', state)
+        console.log('Activity:', state.activityState?.activity)
+        setGameState(state)
+        setIsLoading(false)
+      })
+      .catch(err => {
+        console.error('Error fetching game state:', err)
+        setError('Failed to connect to room. Please try again.')
+        setIsLoading(false)
+      })
+
     const unsubscribe = subscribeToRoom(roomCode, (newState) => {
+      console.log('Game state updated:', newState)
       setGameState(newState)
       if (newState.phase === GAME_PHASES.TOPIC_SELECT) {
         setPhase(PHASES.TOPICS)
@@ -34,25 +64,91 @@ export default function StudentJoin() {
   const currentPresenter = gameState.currentPresenter
   const isPresenting = currentPresenter?.playerId === myPlayer?.id
   const someoneElsePresenting = currentPresenter && !isPresenting
+  const activity = gameState.activityState?.activity || null
+
+  console.log('Current activity:', activity)
 
   async function handleJoin() {
     const trimmed = name.trim()
     if (!trimmed) { setError('Please enter your name.'); return }
     if (trimmed.length < 2) { setError('Name must be at least 2 characters.'); return }
-    const current = await getState(roomCode)
-    if (current.players.some(p => p.name.toLowerCase() === trimmed.toLowerCase())) {
-      setError('That name is already taken. Try a different one.')
-      return
+    
+    try {
+      const current = await getState(roomCode)
+      console.log('Current state at join time:', current)
+      console.log('Activity at join time:', current.activityState?.activity)
+      
+      if (current.players.some(p => p.name.toLowerCase() === trimmed.toLowerCase())) {
+        setError('That name is already taken. Try a different one.')
+        return
+      }
+      
+      const updated = await addPlayer(roomCode, trimmed)
+      const me = updated.players.find(p => p.name.toLowerCase() === trimmed.toLowerCase())
+      setMyPlayer(me)
+      setError('')
+
+      console.log('Player joined:', me)
+
+      // Check activity type at join time
+      const joinActivityType = current.activityState?.activity
+      console.log('Activity type at join:', joinActivityType)
+      
+      // For reading comprehension, store player info and navigate
+      if (joinActivityType === 'reading-comprehension') {
+        console.log('Navigating to reading comprehension')
+        sessionStorage.setItem(`player_${roomCode}`, JSON.stringify(me))
+        navigate(`/reading-comprehension?view=student&room=${roomCode}`)
+      } else {
+        // For debate, continue with normal flow
+        console.log('Continuing with debate flow')
+        setPhase(PHASES.WAITING)
+      }
+    } catch (err) {
+      console.error('Error joining:', err)
+      setError('Failed to join. Please try again.')
     }
-    const updated = await addPlayer(roomCode, trimmed)
-    const me = updated.players.find(p => p.name.toLowerCase() === trimmed.toLowerCase())
-    setMyPlayer(me)
-    setPhase(PHASES.WAITING)
-    setError('')
   }
 
   const avatar = myPlayer ? AVATARS.find(a => a.id === myPlayer.avatarId) || AVATARS[0] : null
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className={styles.root}>
+        <div className={styles.setupCard}>
+          <p>Loading room...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (error && phase === PHASES.SETUP) {
+    return (
+      <div className={styles.root}>
+        <div className={styles.orb1} />
+        <div className={styles.pattern} />
+        <div className={styles.setupCard}>
+          <h2 style={{ color: '#ff6b6b' }}>Error</h2>
+          <p>{error}</p>
+          <button 
+            className={styles.joinBtn} 
+            onClick={() => window.location.reload()}
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // For reading comprehension, only show setup screen
+  if (activity === 'reading-comprehension') {
+    return <SetupScreen roomCode={roomCode} name={name} setName={setName} onJoin={handleJoin} error={error} />
+  }
+
+  // For debate, use the normal flow
   if (phase === PHASES.SETUP) {
     return <SetupScreen roomCode={roomCode} name={name} setName={setName} onJoin={handleJoin} error={error} />
   }
@@ -84,7 +180,7 @@ function SetupScreen({ roomCode, name, setName, onJoin, error }) {
       <div className={styles.setupCard}>
         <img src="/rockNroll.png" alt="Pacey" className={styles.setupMascot} />
         <div className={styles.roomBadge}>Room {roomCode}</div>
-        <h1 className={styles.setupTitle}>Join the Debate!</h1>
+        <h1 className={styles.setupTitle}>Join the Activity!</h1>
         <p className={styles.setupSub}>Enter your name to get started</p>
         <div className={styles.inputWrap}>
           <input
@@ -276,7 +372,6 @@ function CommittedCard({ side, topic, myPlayer, currentPresenter, avatarMap, ava
   const [acknowledged, setAcknowledged] = useState(false)
   const vibrationRef = React.useRef(null)
 
-  // Compute these internally from live props
   const isPresenting = currentPresenter?.playerId === myPlayer?.id
   const someoneElsePresenting = currentPresenter && !isPresenting
 
@@ -284,10 +379,8 @@ function CommittedCard({ side, topic, myPlayer, currentPresenter, avatarMap, ava
     if (isPresenting && !acknowledged) {
       console.log('Vibration triggered for:', myPlayer?.name)
 
-      // Immediate first buzz
       if (navigator.vibrate) navigator.vibrate([500, 300])
 
-      // Continue repeating
       vibrationRef.current = setInterval(() => {
         if (navigator.vibrate) navigator.vibrate([500, 300])
       }, 800)
