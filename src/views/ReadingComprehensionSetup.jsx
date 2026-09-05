@@ -86,8 +86,20 @@ export default function ReadingComprehensionSetup() {
   }
 
   const handleLaunch = async () => {
-    const topicToUse = selectedSource === 'custom' ? customTopic : selectedTopic
+    let topicToUse = selectedSource === 'custom' ? customTopic : selectedTopic
     if (!topicToUse) return
+
+    // Custom topics built in the form don't have perspective IDs (readingTopics.js
+    // entries do) — the student view keys off perspective.id, so generate them here.
+    if (topicToUse.perspectives?.some(p => !p.id)) {
+      topicToUse = {
+        ...topicToUse,
+        perspectives: topicToUse.perspectives.map((p, i) => ({
+          ...p,
+          id: p.id || `perspective_${i}_${Date.now()}`,
+        })),
+      }
+    }
 
     const roomCode = generateRoomCode()
     await initRoom(roomCode, {

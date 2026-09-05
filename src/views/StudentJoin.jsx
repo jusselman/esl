@@ -41,7 +41,7 @@ export default function StudentJoin() {
     getState(roomCode)
       .then(state => {
         console.log('Game state loaded:', state)
-        console.log('Activity:', state.activityState?.activity)
+        console.log('Activity:', state.activity)
         setGameState(state)
         setIsLoading(false)
       })
@@ -64,7 +64,7 @@ export default function StudentJoin() {
   const currentPresenter = gameState.currentPresenter
   const isPresenting = currentPresenter?.playerId === myPlayer?.id
   const someoneElsePresenting = currentPresenter && !isPresenting
-  const activity = gameState.activityState?.activity || null
+  const activity = gameState.activity || null
 
   console.log('Current activity:', activity)
 
@@ -76,7 +76,7 @@ export default function StudentJoin() {
     try {
       const current = await getState(roomCode)
       console.log('Current state at join time:', current)
-      console.log('Activity at join time:', current.activityState?.activity)
+      console.log('Activity at join time:', current.activity)
       
       if (current.players.some(p => p.name.toLowerCase() === trimmed.toLowerCase())) {
         setError('That name is already taken. Try a different one.')
@@ -91,7 +91,7 @@ export default function StudentJoin() {
       console.log('Player joined:', me)
 
       // Check activity type at join time
-      const joinActivityType = current.activityState?.activity
+      const joinActivityType = current.activity
       console.log('Activity type at join:', joinActivityType)
       
       // For reading comprehension, store player info and navigate

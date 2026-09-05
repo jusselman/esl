@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
-import { getState, subscribeToRoom, getResponsesForRoom, subscribeToReadingResponses, AVATARS } from '../store/gameStore'
+import { getState, subscribeToRoom, getResponsesForRoom, subscribeToReadingResponses, startActivity, AVATARS } from '../store/gameStore'
 import Timer from '../components/Timer'
 import styles from './ReadingComprehensionHost.module.css'
 
@@ -12,6 +12,15 @@ export default function ReadingComprehensionHost() {
 
   const [gameState, setGameState] = useState(null)
   const [responses, setResponses] = useState([])
+  const [starting, setStarting] = useState(false)
+  const [now, setNow] = useState(Date.now())
+
+  // Tick every second so the "Time Remaining" display actually counts down
+  // instead of only updating when a realtime event happens to re-render us.
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     if (!roomCode) return
@@ -58,14 +67,24 @@ export default function ReadingComprehensionHost() {
   const avatarMap = Object.fromEntries(AVATARS.map(a => [a.id, a]))
 
   // Calculate times
-  const startTime = startedAt ? new Date(startedAt).getTime() : Date.now()
+  const startTime = startedAt ? new Date(startedAt).getTime() : now
   const endTime = startTime + (timeLimit * 60 * 1000)
-  const elapsedMs = Date.now() - startTime
+  const elapsedMs = now - startTime
   const elapsedSecs = Math.floor(elapsedMs / 1000)
-  const remainingSecs = Math.max(0, Math.floor((endTime - Date.now()) / 1000))
+  const remainingSecs = Math.max(0, Math.floor((endTime - now) / 1000))
 
   const handleGradeClick = () => {
     navigate(`/admin/grading/${roomCode}`)
+  }
+
+  const handleBeginActivity = async () => {
+    if (startedAt || starting) return
+    setStarting(true)
+    try {
+      await startActivity(roomCode)
+    } finally {
+      setStarting(false)
+    }
   }
 
   // Show all players who joined, but highlight those who submitted
@@ -192,10 +211,11 @@ export default function ReadingComprehensionHost() {
       {/* Action Buttons */}
       <div className={styles.actionRow}>
         <button
-          className={`${styles.gradeBtn}`}
-          onClick={() => {}}
+          className={`${styles.gradeBtn} ${startedAt ? styles.gradeBtnActive : ''}`}
+          onClick={handleBeginActivity}
+          disabled={!!startedAt || starting}
         >
-          Begin Activity
+          {startedAt ? 'Activity Started' : starting ? 'Starting…' : 'Begin Activity'}
         </button>
 
         <button

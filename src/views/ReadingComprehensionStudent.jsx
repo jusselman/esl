@@ -53,6 +53,19 @@ export default function ReadingComprehensionStudent() {
     return <div className={styles.root}>Waiting for activity to begin...</div>
   }
 
+  // Room/topic exist, but the teacher hasn't clicked "Begin Activity" yet —
+  // don't start the timer or show reading content until they do.
+  if (!startedAt) {
+    return (
+      <div className={styles.root}>
+        <div className={styles.waitingCard}>
+          <h2 className={styles.waitingTitle}>You're in!</h2>
+          <p className={styles.waitingText}>Waiting for your teacher to start the activity…</p>
+        </div>
+      </div>
+    )
+  }
+
   const allPerspectiveIds = new Set(topic.perspectives.map(p => p.id))
   const allRead = tappedPerspectives.size === allPerspectiveIds.size
   const wordCount = responseText.trim().split(/\s+/).filter(w => w.length > 0).length

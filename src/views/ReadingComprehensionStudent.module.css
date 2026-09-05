@@ -347,6 +347,34 @@
   cursor: not-allowed;
 }
 
+/* ── Waiting for teacher to begin ────────── */
+.waitingCard {
+  background: #f6db96;
+  border: 3px solid #000000;
+  border-radius: 12px;
+  padding: 2.5rem 2rem;
+  box-shadow: 4px 4px 0px #000000;
+  max-width: 420px;
+  text-align: center;
+  animation: fadeIn 0.4s ease;
+}
+
+.waitingTitle {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #5ec9b7;
+  -webkit-text-stroke: 1px #000000;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.75rem;
+}
+
+.waitingText {
+  font-weight: 700;
+  color: #1B3A5C;
+  margin: 0;
+}
+
 /* ── Phase: Submitted ────────────────────── */
 .submittedPhase {
   display: flex;

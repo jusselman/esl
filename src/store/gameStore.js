@@ -78,13 +78,25 @@ export async function initRoom(roomCode, activityData = {}) {
     activityState: {
       topic: activityData.topic || null,
       timeLimit: activityData.timeLimit || null,
-      startedAt: new Date().toISOString(),
+      // Timer does not start until the host explicitly begins the activity
+      // (see startActivity below) — do not set this on room creation.
+      startedAt: null,
     },
   }
   await supabase
     .from('rooms')
     .upsert({ id: roomCode, state: fresh, updated_at: new Date().toISOString() })
   return fresh
+}
+
+export async function startActivity(roomCode) {
+  return setState(roomCode, state => ({
+    ...state,
+    activityState: {
+      ...state.activityState,
+      startedAt: new Date().toISOString(),
+    },
+  }))
 }
 
 export async function addPlayer(roomCode, name) {
