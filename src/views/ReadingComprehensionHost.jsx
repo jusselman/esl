@@ -47,9 +47,20 @@ export default function ReadingComprehensionHost() {
       })
     })
 
+    // Safety-net poll: the postgres_changes realtime event above depends on
+    // the reading_responses table being added to Supabase's realtime
+    // publication, which is an easy thing to miss configuring per-table.
+    // Re-fetch periodically so submissions still show up (within a few
+    // seconds) even if that realtime event never arrives, instead of the
+    // host getting stuck showing 0 submitted until someone refreshes.
+    const pollInterval = setInterval(() => {
+      getResponsesForRoom(roomCode).then(setResponses)
+    }, 3000)
+
     return () => {
       unsubscribeRoom?.()
       unsubscribeResponses?.()
+      clearInterval(pollInterval)
     }
   }, [roomCode])
 

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { getState, subscribeToRoom, submitReadingResponse, AVATARS } from '../store/gameStore'
+import { getState, subscribeToRoom, submitReadingResponse } from '../store/gameStore'
 import Timer from '../components/Timer'
-import PerspectiveCard from '../components/PerspectiveCard'
 import styles from './ReadingComprehensionStudent.module.css'
 
 /**
@@ -58,6 +57,9 @@ export default function ReadingComprehensionStudent() {
   if (!startedAt) {
     return (
       <div className={styles.root}>
+        <div className={styles.orb1} />
+        <div className={styles.orb2} />
+        <div className={styles.pattern} />
         <div className={styles.waitingCard}>
           <h2 className={styles.waitingTitle}>You're in!</h2>
           <p className={styles.waitingText}>Waiting for your teacher to start the activity…</p>
@@ -128,40 +130,63 @@ export default function ReadingComprehensionStudent() {
     }
   }
 
+  const timerBadge = (
+    <div className={styles.timerFixed}>
+      <div className={styles.timerLabel}>Time Left</div>
+      <Timer
+        startedAt={startedAtMs}
+        endsAt={endsAtMs}
+        onComplete={handleTimerComplete}
+        className={styles.timer}
+        warningClassName={styles.warning}
+      />
+    </div>
+  )
+
   // Reading phase: Show perspective cards
   if (phase === 'reading') {
     return (
       <div className={styles.root}>
-        <div className={styles.timer}>
-          <Timer
-            startedAt={startedAtMs}
-            endsAt={endsAtMs}
-            onComplete={handleTimerComplete}
-            showAsLarge={false}
-          />
-        </div>
+        <div className={styles.orb1} />
+        <div className={styles.orb2} />
+        <div className={styles.pattern} />
+        {timerBadge}
 
-        <div className={styles.content}>
-          <h1 className={styles.topic}>{topic.title}</h1>
+        <div className={styles.container}>
+          <div className={styles.readingPhase}>
+            <h1 className={styles.phaseTitle}>{topic.title}</h1>
+            <p className={styles.phaseInstruction}>
+              Read every perspective below, then share your own response.
+            </p>
 
-          <div className={styles.perspectiveGrid}>
-            {topic.perspectives.map(perspective => (
-              <PerspectiveCard
-                key={perspective.id}
-                perspective={perspective}
-                onTap={() => handlePerspectiveTap(perspective.id)}
-                tapped={tappedPerspectives.has(perspective.id)}
-                expanded={tappedPerspectives.has(perspective.id)}
-              />
-            ))}
-          </div>
-
-          <div className={styles.bottomSection}>
-            <div className={styles.progressText}>
-              {tappedPerspectives.size} of {topic.perspectives.length} perspectives read
+            <div className={styles.perspectiveGrid}>
+              {topic.perspectives.map(perspective => {
+                const tapped = tappedPerspectives.has(perspective.id)
+                return (
+                  <div
+                    key={perspective.id}
+                    className={`${styles.perspectiveCard} ${tapped ? `${styles.expanded} ${styles.read}` : ''}`}
+                    onClick={() => handlePerspectiveTap(perspective.id)}
+                  >
+                    <div className={styles.perspectiveHeader}>
+                      <div className={styles.perspectiveIcon}>{perspective.icon}</div>
+                      <div className={styles.perspectiveInfo}>
+                        <div className={styles.perspectiveName}>{perspective.name}</div>
+                        <div className={styles.perspectiveTitle}>{perspective.title}</div>
+                      </div>
+                    </div>
+                    <div className={styles.perspectiveText}>{perspective.viewpoint}</div>
+                    <div className={styles.readIndicator}>{tapped ? '✓ Read' : 'Tap to read'}</div>
+                  </div>
+                )
+              })}
             </div>
+
+            <p className={styles.phaseInstruction}>
+              {tappedPerspectives.size} of {topic.perspectives.length} perspectives read
+            </p>
             <button
-              className={`${styles.startBtn} ${allRead ? styles.startBtn_enabled : styles.startBtn_disabled}`}
+              className={styles.readyButton}
               onClick={handleStartWriting}
               disabled={!allRead}
             >
@@ -177,36 +202,35 @@ export default function ReadingComprehensionStudent() {
   if (phase === 'writing') {
     return (
       <div className={styles.root}>
-        <div className={styles.writingContainer}>
-          <div className={styles.header}>
-            <h2 className={styles.writingTitle}>{topic.title}</h2>
-            <div className={styles.timer}>
-              <Timer
-                startedAt={startedAtMs}
-                endsAt={endsAtMs}
-                onComplete={handleTimerComplete}
-                showAsLarge={false}
-              />
+        <div className={styles.orb1} />
+        <div className={styles.orb2} />
+        <div className={styles.pattern} />
+        {timerBadge}
+
+        <div className={styles.container}>
+          <div className={styles.writingPhase}>
+            <div className={styles.promptBox}>
+              <div className={styles.promptLabel}>Topic</div>
+              <div className={styles.promptText}>{topic.title}</div>
             </div>
-          </div>
 
-          <textarea
-            className={styles.textarea}
-            placeholder="Type your response..."
-            value={responseText}
-            onChange={(e) => setResponseText(e.target.value)}
-            autoFocus
-          />
+            <textarea
+              className={styles.textarea}
+              placeholder="Type your response..."
+              value={responseText}
+              onChange={(e) => setResponseText(e.target.value)}
+              autoFocus
+            />
 
-          <div className={styles.writingFooter}>
-            <div className={styles.wordCount}>
-              <span className={styles.current}>{wordCount}</span>
-              <span className={styles.target}>/ ~{targetWords}</span>
-              <span className={styles.label}>words</span>
+            <div className={styles.wordCountSection}>
+              <div className={styles.wordCount}>{wordCount} words</div>
+              <div className={`${styles.wordCountTarget} ${wordCount < targetWords ? styles.warning : ''}`}>
+                Aim for ~{targetWords}
+              </div>
             </div>
 
             <button
-              className={styles.submitBtn}
+              className={styles.submitButton}
               onClick={handleSubmit}
               disabled={!responseText.trim()}
             >
@@ -222,26 +246,31 @@ export default function ReadingComprehensionStudent() {
   if (phase === 'submitted') {
     return (
       <div className={styles.root}>
-        <div className={styles.submittedContainer}>
-          <div className={styles.submittedIcon}>✓</div>
-          <h2 className={styles.submittedTitle}>Response Submitted</h2>
-          <p className={styles.submittedMessage}>
-            Your response has been submitted successfully.
-          </p>
-          <p className={styles.submittedSubtext}>
-            Your teacher will review your response and provide feedback.
-          </p>
-          <div className={styles.submittedStats}>
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>Words:</span>
-              <span className={styles.statValue}>{wordCount}</span>
-            </div>
-            {submissionTime !== null && (
-              <div className={styles.stat}>
-                <span className={styles.statLabel}>Time Spent:</span>
-                <span className={styles.statValue}>{Math.floor(submissionTime / 60)}:{String(submissionTime % 60).padStart(2, '0')}</span>
+        <div className={styles.orb1} />
+        <div className={styles.orb2} />
+        <div className={styles.pattern} />
+
+        <div className={styles.container}>
+          <div className={styles.submittedPhase}>
+            <div className={styles.checkmark}>✓</div>
+            <h2 className={styles.submittedMessage}>Response Submitted!</h2>
+            <p className={styles.submittedDetail}>
+              Your teacher will review your response and provide feedback.
+            </p>
+            <div className={styles.statsBox}>
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>Words</span>
+                <span className={styles.statValue}>{wordCount}</span>
               </div>
-            )}
+              {submissionTime !== null && (
+                <div className={styles.statItem}>
+                  <span className={styles.statLabel}>Time Spent</span>
+                  <span className={styles.statValue}>
+                    {Math.floor(submissionTime / 60)}:{String(submissionTime % 60).padStart(2, '0')}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

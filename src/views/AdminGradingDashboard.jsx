@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getResponsesForRoom, getGradingsForRoom, submitGrading, AVATARS } from '../store/gameStore'
+import { getResponsesForRoom, getGradingsForRoom, submitGrading } from '../store/gameStore'
 import GradingRubric from '../components/GradingRubric'
 import styles from './AdminGradingDashboard.module.css'
 
@@ -9,10 +9,11 @@ import styles from './AdminGradingDashboard.module.css'
  * Teacher's grading interface for reading comprehension responses
  *
  * Flow:
- * 1. List all students who submitted (left panel)
- * 2. Display student response (center/top)
- * 3. Show grading rubric form (center/bottom)
- * 4. Save grades to Supabase
+ * 1. Page header: back button, "Grade Responses" title, progress count
+ * 2. List all students who submitted (left panel)
+ * 3. Display student response (right/top)
+ * 4. Show grading rubric form (right/bottom)
+ * 5. Save grades to Supabase
  */
 export default function AdminGradingDashboard() {
   const { roomCode } = useParams()
@@ -37,8 +38,6 @@ export default function AdminGradingDashboard() {
     // Load all existing gradings
     getGradingsForRoom(roomCode).then(setGradings)
   }, [roomCode])
-
-  const avatarMap = Object.fromEntries(AVATARS.map(a => [a.id, a]))
 
   const selectedGrading = selectedResponse
     ? gradings.find(g => g.student_id === selectedResponse.student_id)
@@ -80,6 +79,11 @@ export default function AdminGradingDashboard() {
 
   return (
     <div className={styles.root}>
+      <div className={styles.orb1} />
+      <div className={styles.orb2} />
+      <div className={styles.pattern} />
+
+      {/* Page Header */}
       <div className={styles.header}>
         <button className={styles.backBtn} onClick={() => navigate(`/reading-comprehension/host?room=${roomCode}`)}>
           ← Back
