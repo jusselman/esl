@@ -1,0 +1,368 @@
+.root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #d66e55;
+  position: relative;
+  overflow: visible;
+}
+
+/* ── Background Orbs ─────────────────────── */
+.orb1 {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(94,201,183,0.2) 0%, transparent 70%);
+  top: -150px;
+  left: -100px;
+  pointer-events: none;
+}
+
+.orb2 {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(27,58,92,0.15) 0%, transparent 70%);
+  bottom: -80px;
+  right: -60px;
+  pointer-events: none;
+}
+
+.pattern {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ── Turtle Image (Above Box) ────────────── */
+.turtleImage {
+  max-width: 450px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 20px rgba(27,58,92,0.4));
+  animation: slideDown 0.6s ease both;
+  margin-bottom: -40px;
+  position: relative;
+  z-index: 10;
+}
+
+/* ── Container ───────────────────────────── */
+.container {
+  position: relative;
+  z-index: 2;
+  background: #FDFAF4;
+  border: 3px solid #000000;
+  border-radius: 18px;
+  box-shadow: 6px 6px 0px #000000;
+  padding: 2.5rem;
+  max-width: 720px;
+  width: 100%;
+}
+
+/* ── Header ──────────────────────────────── */
+.container > h1 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  color: #d66e55;
+  letter-spacing: -0.02em;
+  -webkit-text-stroke: 2px #000000;
+  paint-order: stroke fill;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.subtitle {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1B3A5C;
+  letter-spacing: 0.05em;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* ── Theme Grid (Step 1) ─────────────────── */
+.themeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+.themeBtn {
+  padding: 1.25rem;
+  border: 3px solid #000000;
+  border-radius: 14px;
+  background: #FDFAF4;
+  font-family: var(--font-display);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 4px 4px 0px #000000;
+  transition: all 0.1s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.themeBtn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #000000;
+}
+
+.themeBtn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 1px 1px 0px #000000;
+}
+
+.themeBtn_active {
+  background: var(--theme-color, #5ec9b7);
+  box-shadow: 5px 5px 0px #000000;
+}
+
+.themeBtn_active:hover {
+  box-shadow: 7px 7px 0px #000000;
+}
+
+.themeEmoji {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.themeTitle {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #000000;
+  letter-spacing: -0.01em;
+}
+
+.themeDesc {
+  font-size: 0.8rem;
+  color: #3a3a3a;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.themeCount {
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #1B3A5C;
+  letter-spacing: 0.03em;
+}
+
+/* ── Round Config (Step 2) ───────────────── */
+.configSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  margin-bottom: 2rem;
+}
+
+.configGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.configLabel {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #1B3A5C;
+  letter-spacing: 0.03em;
+}
+
+.optionRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 0.85rem;
+}
+
+.optionBtn {
+  padding: 1rem 0.75rem;
+  border: 3px solid #000000;
+  border-radius: 12px;
+  background: #FDFAF4;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: #000000;
+  cursor: pointer;
+  box-shadow: 4px 4px 0px #000000;
+  transition: all 0.1s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.optionBtn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #000000;
+}
+
+.optionBtn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 1px 1px 0px #000000;
+}
+
+.optionBtnLabel {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.optionBtnSub {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #3a3a3a;
+  letter-spacing: 0.05em;
+}
+
+.optionBtn_active {
+  background: #5ec9b7;
+  box-shadow: 5px 5px 0px #000000;
+}
+
+.optionBtn_active:hover {
+  box-shadow: 7px 7px 0px #000000;
+}
+
+/* ── Review Card (Step 3) ────────────────── */
+.reviewCard {
+  background: #f6db96;
+  border: 3px solid #000000;
+  border-radius: 12px;
+  padding: 1.75rem;
+  box-shadow: 5px 5px 0px #000000;
+  margin-bottom: 1.5rem;
+}
+
+.reviewSection {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #000000;
+}
+
+.reviewSection:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.reviewSection > h3 {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1B3A5C;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+}
+
+.reviewSection > p {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #000000;
+  line-height: 1.6;
+}
+
+/* ── Button Row ──────────────────────────── */
+.buttonRow {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.backBtn {
+  padding: 1rem 2rem;
+  border: 3px solid #000000;
+  border-radius: 12px;
+  background: #ccc;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #000000;
+  cursor: pointer;
+  box-shadow: 4px 4px 0px #000000;
+  transition: all 0.1s ease;
+  letter-spacing: 0.02em;
+}
+
+.backBtn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #000000;
+}
+
+.backBtn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 1px 1px 0px #000000;
+}
+
+.nextBtn,
+.launchBtn {
+  flex: 1;
+  padding: 1rem 2rem;
+  border: 3px solid #000000;
+  border-radius: 12px;
+  background: #5ec9b7;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #000000;
+  cursor: pointer;
+  box-shadow: 4px 4px 0px #000000;
+  transition: all 0.1s ease;
+  letter-spacing: 0.02em;
+}
+
+.nextBtn:hover:not(:disabled),
+.launchBtn:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #000000;
+}
+
+.nextBtn:active:not(:disabled),
+.launchBtn:active:not(:disabled) {
+  transform: translate(4px, 4px);
+  box-shadow: 1px 1px 0px #000000;
+}
+
+.nextBtn:disabled,
+.launchBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* ── Animations ──────────────────────────── */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Responsive ──────────────────────────── */
+@media (max-width: 700px) {
+  .themeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .turtleImage {
+    max-width: 280px;
+  }
+
+  .container {
+    padding: 1.75rem;
+  }
+}

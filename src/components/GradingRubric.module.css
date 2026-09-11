@@ -1,0 +1,158 @@
+/* ── Rubric Wrapper ──────────────────────── */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.9rem;
+  border-bottom: 3px solid #000000;
+}
+
+.headerTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #1B3A5C;
+  letter-spacing: -0.01em;
+}
+
+/* ── Category Card ───────────────────────── */
+.category {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1rem 1.1rem;
+  background: #ffffff;
+  border: 2px solid #000000;
+  border-radius: 10px;
+  box-shadow: 3px 3px 0px #000000;
+}
+
+.categoryTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.categoryLabel {
+  flex: 1;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1B3A5C;
+  letter-spacing: -0.01em;
+}
+
+.scoreGroup {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.scoreInput {
+  width: 54px;
+  padding: 0.4rem 0.3rem;
+  border: 2px solid #000000;
+  border-radius: 8px;
+  background: #FDFAF4;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #000000;
+  text-align: center;
+  box-shadow: 2px 2px 0px #000000;
+  transition: box-shadow 0.1s ease;
+}
+
+.scoreInput:focus {
+  outline: none;
+  box-shadow: 3px 3px 0px #000000;
+}
+
+.scoreMax {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #3a3a3a;
+}
+
+.feedbackInput {
+  padding: 0.6rem 0.75rem;
+  border: 2px solid #000000;
+  border-radius: 8px;
+  background: #FDFAF4;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: #1B3A5C;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 56px;
+  transition: box-shadow 0.1s ease;
+}
+
+.feedbackInput::placeholder {
+  color: #8a8a8a;
+}
+
+.feedbackInput:focus {
+  outline: none;
+  box-shadow: 2px 2px 0px #000000;
+}
+
+/* ── Total ────────────────────────────────── */
+.totalBox {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: #f6db96;
+  border: 3px solid #000000;
+  border-radius: 12px;
+  box-shadow: 4px 4px 0px #000000;
+}
+
+.totalLabel {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1B3A5C;
+}
+
+.totalValue {
+  color: #2E9E90;
+  font-size: 1.2rem;
+}
+
+/* ── Save Button ──────────────────────────── */
+.saveBtn {
+  padding: 1rem 2rem;
+  border: 3px solid #000000;
+  border-radius: 12px;
+  background: #5ec9b7;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #000000;
+  cursor: pointer;
+  box-shadow: 4px 4px 0px #000000;
+  transition: all 0.1s ease;
+  letter-spacing: 0.02em;
+}
+
+.saveBtn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #000000;
+}
+
+.saveBtn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 1px 1px 0px #000000;
+}

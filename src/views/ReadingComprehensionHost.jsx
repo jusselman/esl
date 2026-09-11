@@ -103,6 +103,9 @@ export default function ReadingComprehensionHost() {
   const submittedStudentIds = new Set(responses.map(r => r.student_id))
   const studentCount = responses.length
   const allSubmitted = remainingSecs === 0 || (allPlayers.length > 0 && allPlayers.length === responses.length)
+  // Once everyone has submitted, freeze the displayed clock at 0:00 instead
+  // of letting it keep counting down toward the original time limit.
+  const displaySecs = allSubmitted ? 0 : remainingSecs
 
   return (
     <div className={styles.root}>
@@ -160,8 +163,8 @@ export default function ReadingComprehensionHost() {
 
           <div className={styles.timerBox}>
             <div className={styles.timerLabel}>Time Remaining</div>
-            <div className={`${styles.timer} ${remainingSecs <= 30 ? styles.timerWarning : ''}`}>
-              {Math.floor(remainingSecs / 60)}:{String(remainingSecs % 60).padStart(2, '0')}
+            <div className={`${styles.timer} ${displaySecs <= 30 ? styles.timerWarning : ''}`}>
+              {Math.floor(displaySecs / 60)}:{String(displaySecs % 60).padStart(2, '0')}
             </div>
           </div>
 

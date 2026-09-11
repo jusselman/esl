@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import styles from './GradingRubric.module.css'
 
 /**
  * GradingRubric Component
@@ -69,42 +70,25 @@ export default function GradingRubric({ onSubmitGrade, initialGrade }) {
   ]
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid #f0f0f0' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#333', margin: 0 }}>Rubric</h3>
+    <div className={styles.root}>
+      <div className={styles.headerRow}>
+        <h3 className={styles.headerTitle}>Rubric</h3>
       </div>
 
       {categories.map(cat => (
-        <div key={cat.key} style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          padding: '12px',
-          background: '#f8f8f8',
-          borderRadius: '8px',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-            <label style={{ fontSize: '14px', fontWeight: '600', color: '#333', flex: 1 }}>
-              {cat.label}
-            </label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div key={cat.key} className={styles.category}>
+          <div className={styles.categoryTop}>
+            <label className={styles.categoryLabel}>{cat.label}</label>
+            <div className={styles.scoreGroup}>
               <input
                 type="number"
                 min="0"
                 max="25"
                 value={scores[cat.key]}
                 onChange={(e) => handleScoreChange(cat.key, e.target.value)}
-                style={{
-                  width: '50px',
-                  padding: '6px 8px',
-                  border: '1px solid #d0d0d0',
-                  borderRadius: '4px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  textAlign: 'center',
-                }}
+                className={styles.scoreInput}
               />
-              <span style={{ fontSize: '13px', color: '#999', fontWeight: '600' }}>/ 25</span>
+              <span className={styles.scoreMax}>/ 25</span>
             </div>
           </div>
 
@@ -112,51 +96,18 @@ export default function GradingRubric({ onSubmitGrade, initialGrade }) {
             value={feedback[cat.key] || ''}
             onChange={(e) => handleFeedbackChange(cat.key, e.target.value)}
             placeholder="Optional feedback..."
-            style={{
-              padding: '8px 12px',
-              border: '1px solid #d0d0d0',
-              borderRadius: '6px',
-              fontSize: '13px',
-              fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
-              resize: 'vertical',
-              minHeight: '60px',
-            }}
+            className={styles.feedbackInput}
           />
         </div>
       ))}
 
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '12px',
-        background: '#f0f8f7',
-        borderRadius: '8px',
-        border: '2px solid #2EC4A9',
-      }}>
-        <div style={{
-          fontSize: '16px',
-          fontWeight: '700',
-          color: '#333',
-        }}>
-          Total: <span style={{ color: '#2EC4A9', fontSize: '18px' }}>{totalScore}</span> / 100
+      <div className={styles.totalBox}>
+        <div className={styles.totalLabel}>
+          Total: <span className={styles.totalValue}>{totalScore}</span> / 100
         </div>
       </div>
 
-      <button
-        onClick={handleSubmit}
-        style={{
-          padding: '12px 24px',
-          background: '#2EC4A9',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          fontSize: '16px',
-          fontWeight: '600',
-          cursor: 'pointer',
-          transition: 'all 0.3s ease',
-        }}
-      >
+      <button onClick={handleSubmit} className={styles.saveBtn}>
         Save Grade
       </button>
     </div>

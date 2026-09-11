@@ -47,12 +47,12 @@ const ACTIVITIES = [
   {
     id: 'grammar',
     label: 'Grammar Duel',
-    description: 'Fast-paced competitive grammar correction with peer voting.',
+    description: 'Live multiple-choice showdown — spot the correct or incorrect sentence before time runs out.',
     icon: '✦',
-    status: 'coming-soon',
+    status: 'ready',
     skills: ['Grammar', 'Writing', 'Analysis'],
-    path: null,
-    color: '#f6db96',
+    path: '/host/grammar-duel',
+    color: '#FF6B6B',
   },
 ]
 
@@ -67,8 +67,8 @@ export default function ActivityMenu() {
       const roomCode = generateRoomCode()
       await initRoom(roomCode)
       navigate(`${activity.path}?room=${roomCode}`)
-    } else if (activity.id === 'reading') {
-      // For reading comprehension, navigate to setup wizard
+    } else if (activity.id === 'reading' || activity.id === 'grammar') {
+      // For reading comprehension and grammar duel, navigate to setup wizard
       navigate(activity.path)
     }
   }

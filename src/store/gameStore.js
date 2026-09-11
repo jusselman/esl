@@ -75,7 +75,10 @@ export async function initRoom(roomCode, activityData = {}) {
     roomCode,
     phase: GAME_PHASES.LOBBY,
     activity: activityData.activity || null,
-    activityState: {
+    // Most activities share the topic/timeLimit/startedAt shape below, but an
+    // activity can instead hand in a fully-formed activityState of its own
+    // (Grammar Duel's rounds/questions/currentQuestionIndex shape, etc.).
+    activityState: activityData.activityState || {
       topic: activityData.topic || null,
       timeLimit: activityData.timeLimit || null,
       // Timer does not start until the host explicitly begins the activity
@@ -222,4 +225,121 @@ export function subscribeToReadingResponses(roomCode, callback) {
     .subscribe()
 
   return () => supabase.removeChannel(channel)
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Grammar Duel
+// ─────────────────────────────────────────────────────────────────
+
+// Kahoot-style scoring: correct answers earn more points the faster they're
+// submitted (half credit just for being right, up to full credit for an
+// instant answer). Wrong answers always score 0.
+export function computeGrammarPoints(correct, timeTakenMs, secondsPerQuestion) {
+  if (!correct) return 0
+  const totalMs = Math.max(1, secondsPerQuestion * 1000)
+  const speedFraction = Math.max(0, Math.min(1, (totalMs - timeTakenMs) / totalMs))
+  return Math.round(500 + 500 * speedFraction)
+}
+
+// Called once, when the host clicks "Begin Activity" in the waiting room —
+// kicks off question 0.
+export async function startGrammarDuel(roomCode) {
+  return setState(roomCode, state => ({
+    ...state,
+    activityState: {
+      ...state.activityState,
+      currentQuestionIndex: 0,
+      questionStartedAt: new Date().toISOString(),
+      status: 'active',
+    },
+  }))
+}
+
+// Called when the host clicks "Next Question" after a question's reveal.
+// Moves to the next question, or marks the duel finished after the last one.
+export async function advanceGrammarQuestion(roomCode) {
+  return setState(roomCode, state => {
+    const { activityState } = state
+    const nextIndex = activityState.currentQuestionIndex + 1
+    if (nextIndex >= (activityState.questions?.length || 0)) {
+      return { ...state, activityState: { ...activityState, status: 'finished' } }
+    }
+    return {
+      ...state,
+      activityState: {
+        ...activityState,
+        currentQuestionIndex: nextIndex,
+        questionStartedAt: new Date().toISOString(),
+      },
+    }
+  })
+}
+
+export async function submitGrammarAnswer(roomCode, studentId, studentName, questionIndex, questionId, choiceIndex, correct, timeTakenMs, points) {
+  const { data, error } = await supabase
+    .from('grammar_answers')
+    .insert({
+      room_id: roomCode,
+      student_id: studentId,
+      student_name: studentName,
+      question_index: questionIndex,
+      question_id: questionId,
+      choice_index: choiceIndex,
+      correct,
+      time_taken_ms: timeTakenMs,
+      points,
+      answered_at: new Date().toISOString(),
+    })
+    .select()
+
+  if (error) console.error('Error submitting grammar answer:', error)
+  return data?.[0] || null
+}
+
+export async function getAnswersForRoom(roomCode) {
+  const { data, error } = await supabase
+    .from('grammar_answers')
+    .select('*')
+    .eq('room_id', roomCode)
+    .order('answered_at', { ascending: true })
+
+  if (error) console.error('Error fetching grammar answers:', error)
+  return data || []
+}
+
+export function subscribeToGrammarAnswers(roomCode, callback) {
+  const channel = supabase
+    .channel(`grammar:${roomCode}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'grammar_answers',
+        filter: `room_id=eq.${roomCode}`,
+      },
+      (payload) => {
+        if (payload.new) callback(payload.new)
+      }
+    )
+    .subscribe()
+
+  return () => supabase.removeChannel(channel)
+}
+
+// Shared by the host (full leaderboard + mini leaderboard) and each student
+// (their own rank) so both compute scores the same way.
+export function buildGrammarLeaderboard(players, answers) {
+  const byId = new Map()
+  players.forEach(p => byId.set(p.id, { id: p.id, name: p.name, avatarId: p.avatarId, points: 0, correct: 0, answered: 0 }))
+  answers.forEach(a => {
+    if (!byId.has(a.student_id)) {
+      byId.set(a.student_id, { id: a.student_id, name: a.student_name, avatarId: null, points: 0, correct: 0, answered: 0 })
+    }
+    const entry = byId.get(a.student_id)
+    entry.points += a.points || 0
+    entry.answered += 1
+    if (a.correct) entry.correct += 1
+  })
+  return [...byId.values()].sort((a, b) => b.points - a.points)
 }

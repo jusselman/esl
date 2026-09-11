@@ -91,11 +91,20 @@
   margin-top: 6rem;
 }
 
-/* ── Phase: Reading ──────────────────────── */
-.readingPhase {
+/* ── Phase: Question ──────────────────────── */
+.questionPhase {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
+}
+
+.progressLabel {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #1B3A5C;
 }
 
 .phaseTitle {
@@ -105,7 +114,7 @@
   color: #d66e55;
   -webkit-text-stroke: 1px #000000;
   letter-spacing: -0.01em;
-  margin-bottom: 0.5rem;
+  margin: 0;
 }
 
 .phaseInstruction {
@@ -113,238 +122,121 @@
   color: #3a3a3a;
   line-height: 1.6;
   font-weight: 500;
+  margin: 0;
 }
 
-.perspectiveGrid {
+.choicesGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
 }
 
-.perspectiveCard {
-  background: #f6db96;
-  border: 3px solid #000000;
-  border-radius: 12px;
-  padding: 1.25rem;
-  box-shadow: 4px 4px 0px #000000;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  animation: slideIn 0.4s ease both;
-}
-
-.perspectiveCard:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0px #000000;
-}
-
-.perspectiveCard.expanded {
-  background: #5ec9b7;
-  border-color: #000000;
-}
-
-.perspectiveCard.read {
-  opacity: 1;
-  border-color: #5ec9b7;
-  background: #e8f7f4;
-}
-
-.perspectiveHeader {
+.choiceCard {
   display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.perspectiveIcon {
-  font-size: 2rem;
-  flex-shrink: 0;
-}
-
-.perspectiveInfo {
-  flex: 1;
-}
-
-.perspectiveName {
-  font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 800;
-  color: #000000;
-  letter-spacing: -0.01em;
-}
-
-.perspectiveTitle {
-  font-size: 0.8rem;
-  color: #3a3a3a;
-  font-weight: 600;
-}
-
-.perspectiveText {
-  font-size: 0.95rem;
-  color: #1B3A5C;
-  line-height: 1.6;
-  margin-top: 0.75rem;
-  display: none;
-}
-
-.perspectiveCard.expanded .perspectiveText {
-  display: block;
-  animation: fadeIn 0.3s ease;
-}
-
-.readIndicator {
-  font-family: var(--font-display);
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #999999;
-  letter-spacing: 0.06em;
-  margin-top: 0.5rem;
-}
-
-.perspectiveCard.read .readIndicator {
-  color: #2E9E90;
-}
-
-.readyButton {
-  width: 100%;
-  padding: 1rem;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1.1rem;
+  background: #ffffff;
   border: 3px solid #000000;
   border-radius: 12px;
-  background: #5ec9b7;
-  font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 800;
-  color: #000000;
-  cursor: pointer;
   box-shadow: 4px 4px 0px #000000;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
-  letter-spacing: 0.02em;
-  margin-top: 1rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--font-body);
+  text-align: left;
 }
 
-.readyButton:hover:not(:disabled) {
+.choiceCard:hover:not(:disabled) {
   transform: translate(-2px, -2px);
   box-shadow: 6px 6px 0px #000000;
 }
 
-.readyButton:active:not(:disabled) {
+.choiceCard:active:not(:disabled) {
   transform: translate(4px, 4px);
   box-shadow: 1px 1px 0px #000000;
 }
 
-.readyButton:disabled {
-  opacity: 0.5;
+.choiceCard:disabled {
   cursor: not-allowed;
-  color: #3a3a3a;
 }
 
-/* ── Phase: Writing ──────────────────────── */
-.writingPhase {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+.choiceCardSelected {
+  background: #5ec9b7;
+  box-shadow: 6px 6px 0px #000000;
+  transform: translate(-2px, -2px);
 }
 
-.promptBox {
-  background: #f6db96;
-  border: 3px solid #000000;
-  border-radius: 12px;
-  padding: 1.25rem;
+.choiceCardCorrect {
+  background: #5ec9b7;
+  box-shadow: 6px 6px 0px #000000;
+  transform: translate(-2px, -2px);
+}
+
+.choiceCardWrong {
+  background: #ffb3ac;
   box-shadow: 4px 4px 0px #000000;
 }
 
-.promptLabel {
-  font-family: var(--font-display);
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #1B3A5C;
-  letter-spacing: 0.06em;
-  margin-bottom: 0.5rem;
+.choiceCardFaded {
+  opacity: 0.5;
 }
 
-.promptText {
-  font-size: 1rem;
-  color: #1B3A5C;
-  line-height: 1.6;
-  font-weight: 600;
-}
-
-.textarea {
-  width: 100%;
-  min-height: 300px;
-  padding: 1rem;
-  border: 3px solid #000000;
-  border-radius: 12px;
-  background: #fff;
-  font-family: var(--font-body);
-  font-size: 1rem;
-  line-height: 1.6;
-  color: #000000;
-  resize: vertical;
-  box-shadow: 3px 3px 0px #000000;
-}
-
-.textarea:focus {
-  outline: none;
-  box-shadow: 5px 5px 0px #1B3A5C;
-}
-
-.wordCountSection {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  background: #f6db96;
-  border: 2px solid #000000;
+.choiceLetter {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
-  box-shadow: 2px 2px 0px #000000;
-}
-
-.wordCount {
+  background: #1B3A5C;
+  color: #FDFAF4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--font-display);
-  font-size: 1rem;
   font-weight: 800;
-  color: #1B3A5C;
+  font-size: 0.9rem;
 }
 
-.wordCountTarget {
-  font-size: 0.85rem;
-  color: #3a3a3a;
+.choiceText {
+  flex: 1;
+  font-size: 0.95rem;
   font-weight: 600;
+  color: #000000;
+  line-height: 1.4;
 }
 
-.wordCountTarget.warning {
-  color: #d66e55;
+/* ── Reveal ───────────────────────────────── */
+.revealBanner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 3px solid #000000;
 }
 
-.submitButton {
-  width: 100%;
-  padding: 1.25rem;
-  border: 3px solid #000000;
-  border-radius: 12px;
-  background: #5ec9b7;
+.revealCorrect {
   font-family: var(--font-display);
   font-size: 1.1rem;
   font-weight: 800;
-  color: #000000;
-  cursor: pointer;
-  box-shadow: 5px 5px 0px #000000;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
-  letter-spacing: 0.02em;
+  color: #2E9E90;
 }
 
-.submitButton:hover:not(:disabled) {
-  transform: translate(-2px, -2px);
-  box-shadow: 7px 7px 0px #000000;
+.revealWrong {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #d66e55;
 }
 
-.submitButton:active:not(:disabled) {
-  transform: translate(4px, 4px);
-  box-shadow: 1px 1px 0px #000000;
-}
-
-.submitButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.explanationText {
+  margin: 0;
+  padding: 0.9rem 1.1rem;
+  background: #f6db96;
+  border: 2px solid #000000;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1B3A5C;
+  line-height: 1.5;
 }
 
 /* ── Waiting for teacher to begin ────────── */
@@ -375,8 +267,8 @@
   margin: 0;
 }
 
-/* ── Phase: Submitted ────────────────────── */
-.submittedPhase {
+/* ── Phase: Final Results ────────────────── */
+.resultsPhase {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -395,22 +287,14 @@
   animation: scaleIn 0.5s ease;
 }
 
-.submittedMessage {
+.resultsMessage {
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 800;
   color: #5ec9b7;
   -webkit-text-stroke: 1px #000000;
   letter-spacing: -0.01em;
-}
-
-.submittedDetail {
-  font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 500;
-  color: #1B3A5C;
-  line-height: 1.6;
-  max-width: 32rem;
+  margin: 0;
 }
 
 .statsBox {
@@ -452,17 +336,6 @@
   to { opacity: 1; }
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @keyframes scaleIn {
   from {
     opacity: 0;
@@ -486,16 +359,12 @@
     margin-top: 5rem;
   }
 
-  .perspectiveGrid {
+  .choicesGrid {
     grid-template-columns: 1fr;
   }
 
   .phaseTitle {
     font-size: 1.3rem;
-  }
-
-  .textarea {
-    min-height: 250px;
   }
 
   .timerFixed {
@@ -518,20 +387,15 @@
     font-size: 1.1rem;
   }
 
-  .perspectiveCard {
-    padding: 1rem;
-  }
-
-  .textarea {
-    min-height: 200px;
-    font-size: 0.9rem;
+  .choiceCard {
+    padding: 0.9rem;
   }
 
   .turtleImage {
     width: 130px;
   }
 
-  .submittedMessage {
+  .resultsMessage {
     font-size: 1.3rem;
   }
 }

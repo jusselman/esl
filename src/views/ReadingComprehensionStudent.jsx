@@ -252,10 +252,10 @@ export default function ReadingComprehensionStudent() {
 
         <div className={styles.container}>
           <div className={styles.submittedPhase}>
-            <div className={styles.checkmark}>✓</div>
-            <h2 className={styles.submittedMessage}>Response Submitted!</h2>
+            <img src="/nerdTurtle.png" alt="Pacey" className={styles.turtleImage} />
+            <h2 className={styles.submittedMessage}>Keep up the great work!</h2>
             <p className={styles.submittedDetail}>
-              Your teacher will review your response and provide feedback.
+              Your response has been submitted. Your teacher will review it and provide feedback.
             </p>
             <div className={styles.statsBox}>
               <div className={styles.statItem}>
