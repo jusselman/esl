@@ -26,13 +26,13 @@ const ACTIVITIES = [
   },
   {
     id: 'vocab',
-    label: 'Word Builder',
-    description: 'Collaborative vocabulary exercises with contextual examples and peer challenge rounds.',
+    label: 'Vocabulary Builder',
+    description: 'A menu of vocabulary games, starting with letter-by-letter word building against a point budget.',
     icon: 'A',
-    status: 'coming-soon',
-    skills: ['Vocabulary', 'Reading', 'Writing'],
-    path: null,
-    color: '#f6db96',
+    status: 'ready',
+    skills: ['Vocabulary', 'Spelling', 'Word Recognition'],
+    path: '/vocabulary-builder',
+    color: '#5ec9b7',
   },
   {
     id: 'listen',
@@ -67,8 +67,9 @@ export default function ActivityMenu() {
       const roomCode = generateRoomCode()
       await initRoom(roomCode)
       navigate(`${activity.path}?room=${roomCode}`)
-    } else if (activity.id === 'reading' || activity.id === 'grammar') {
-      // For reading comprehension and grammar duel, navigate to setup wizard
+    } else if (activity.id === 'reading' || activity.id === 'grammar' || activity.id === 'vocab') {
+      // For reading comprehension, grammar duel, and vocabulary builder,
+      // navigate straight to the activity's own setup/menu screen.
       navigate(activity.path)
     }
   }

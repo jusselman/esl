@@ -343,3 +343,127 @@ export function buildGrammarLeaderboard(players, answers) {
   })
   return [...byId.values()].sort((a, b) => b.points - a.points)
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Word Builder (Vocabulary Builder sub-activity)
+// ─────────────────────────────────────────────────────────────────
+
+// Every student starts a Word Builder round with this many points, and
+// loses one for each wrong letter guess. Hitting 0 ends their round —
+// whatever words they already completed still count toward their total.
+export const WORD_BUILDER_STARTING_POINTS = 20
+
+// Called once, when the host clicks "Begin Activity" in the waiting room —
+// starts the shared room-wide timer every student's countdown counts down
+// against. Unlike Grammar Duel, there is no shared "current question": each
+// student works through their own word queue independently from here on.
+export async function startWordBuilder(roomCode) {
+  return setState(roomCode, state => ({
+    ...state,
+    activityState: {
+      ...state.activityState,
+      startedAt: new Date().toISOString(),
+      status: 'active',
+    },
+  }))
+}
+
+// Called by the host once the shared room-wide timer runs out. Marks the
+// room finished so every student's screen locks and shows final results,
+// even for students who still had points left when time expired.
+export async function finishWordBuilder(roomCode) {
+  return setState(roomCode, state => ({
+    ...state,
+    activityState: {
+      ...state.activityState,
+      status: 'finished',
+    },
+  }))
+}
+
+// Each student calls this after every letter guess and after completing a
+// word, so the host's live leaderboard and the student's own progress stay
+// in sync across refreshes. One row per student per room — upserted, not
+// inserted, since a student's progress is a running total rather than a
+// log of discrete events like Grammar Duel's answers.
+export async function upsertWordProgress(roomCode, studentId, studentName, { pointsRemaining, wordsCompleted, finished }) {
+  const { data, error } = await supabase
+    .from('word_builder_progress')
+    .upsert(
+      {
+        room_id: roomCode,
+        student_id: studentId,
+        student_name: studentName,
+        points_remaining: pointsRemaining,
+        words_completed: wordsCompleted,
+        finished,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'room_id,student_id' }
+    )
+    .select()
+
+  if (error) console.error('Error updating word builder progress:', error)
+  return data?.[0] || null
+}
+
+export async function getProgressForRoom(roomCode) {
+  const { data, error } = await supabase
+    .from('word_builder_progress')
+    .select('*')
+    .eq('room_id', roomCode)
+
+  if (error) console.error('Error fetching word builder progress:', error)
+  return data || []
+}
+
+export function subscribeToWordProgress(roomCode, callback) {
+  const channel = supabase
+    .channel(`word-builder:${roomCode}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'word_builder_progress',
+        filter: `room_id=eq.${roomCode}`,
+      },
+      (payload) => {
+        if (payload.new) callback(payload.new)
+      }
+    )
+    .subscribe()
+
+  return () => supabase.removeChannel(channel)
+}
+
+// Shared by the host (live leaderboard) and each student (their own rank).
+// Ranked by words completed first — that is the actual goal — with points
+// remaining as the tiebreaker, since reaching the same total with fewer
+// wrong guesses is the more skillful run.
+export function buildWordBuilderLeaderboard(players, progressRows) {
+  const byId = new Map()
+  players.forEach(p => byId.set(p.id, {
+    id: p.id,
+    name: p.name,
+    avatarId: p.avatarId,
+    pointsRemaining: WORD_BUILDER_STARTING_POINTS,
+    wordsCompleted: 0,
+    finished: false,
+  }))
+  progressRows.forEach(row => {
+    const existing = byId.get(row.student_id)
+    byId.set(row.student_id, {
+      id: row.student_id,
+      name: row.student_name,
+      avatarId: existing?.avatarId ?? null,
+      pointsRemaining: row.points_remaining,
+      wordsCompleted: row.words_completed,
+      finished: row.finished,
+    })
+  })
+  return [...byId.values()].sort((a, b) => {
+    if (b.wordsCompleted !== a.wordsCompleted) return b.wordsCompleted - a.wordsCompleted
+    return b.pointsRemaining - a.pointsRemaining
+  })
+}

@@ -11,6 +11,10 @@ import AdminGradingDashboard from './views/AdminGradingDashboard'
 import GrammarDuelSetup from './views/GrammarDuelSetup'
 import GrammarDuelHost from './views/GrammarDuelHost'
 import GrammarDuelStudent from './views/GrammarDuelStudent'
+import VocabularyBuilderMenu from './views/VocabularyBuilderMenu'
+import WordBuilderSetup from './views/WordBuilderSetup'
+import WordBuilderHost from './views/WordBuilderHost'
+import WordBuilderStudent from './views/WordBuilderStudent'
 
 // ?view=student&room=1234  => student flow
 // Everything else => host flow
@@ -24,6 +28,7 @@ export default function App() {
       <Routes>
         <Route path="/reading-comprehension" element={<ReadingComprehensionStudent />} />
         <Route path="/grammar-duel" element={<GrammarDuelStudent />} />
+        <Route path="/word-builder" element={<WordBuilderStudent />} />
         <Route path="*" element={<StudentJoin />} />
       </Routes>
     )
@@ -39,6 +44,9 @@ export default function App() {
       <Route path="/admin/grading/:roomCode" element={<AdminGradingDashboard />} />
       <Route path="/host/grammar-duel" element={<GrammarDuelSetup />} />
       <Route path="/grammar-duel/host" element={<GrammarDuelHost />} />
+      <Route path="/vocabulary-builder" element={<VocabularyBuilderMenu />} />
+      <Route path="/host/word-builder" element={<WordBuilderSetup />} />
+      <Route path="/word-builder/host" element={<WordBuilderHost />} />
     </Routes>
   )
 }

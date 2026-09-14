@@ -103,6 +103,10 @@ export default function StudentJoin() {
         console.log('Navigating to grammar duel')
         sessionStorage.setItem(`player_${roomCode}`, JSON.stringify(me))
         navigate(`/grammar-duel?view=student&room=${roomCode}`)
+      } else if (joinActivityType === 'word-builder') {
+        console.log('Navigating to word builder')
+        sessionStorage.setItem(`player_${roomCode}`, JSON.stringify(me))
+        navigate(`/word-builder?view=student&room=${roomCode}`)
       } else {
         // For debate, continue with normal flow
         console.log('Continuing with debate flow')
@@ -147,9 +151,9 @@ export default function StudentJoin() {
     )
   }
 
-  // For reading comprehension and grammar duel, only show setup screen —
-  // each activity has its own dedicated post-join view.
-  if (activity === 'reading-comprehension' || activity === 'grammar-duel') {
+  // For reading comprehension, grammar duel, and word builder, only show
+  // setup screen — each activity has its own dedicated post-join view.
+  if (activity === 'reading-comprehension' || activity === 'grammar-duel' || activity === 'word-builder') {
     return <SetupScreen roomCode={roomCode} name={name} setName={setName} onJoin={handleJoin} error={error} />
   }
 
