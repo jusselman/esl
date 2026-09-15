@@ -58,12 +58,11 @@ export default function VocabularyBuilderMenu() {
         </button>
 
         <div className={styles.header}>
-          <div className={styles.subtitleBubble}>
-            <span>Choose a Vocabulary Builder game</span>
-            <div className={styles.subtitleTail} />
-          </div>
           <div className={styles.mascotWrap}>
             <img src="/reclining.png" alt="Pacey" className={styles.mascot} />
+          </div>
+          <div className={styles.subtitleBubble}>
+            <span>Choose a Vocabulary Builder game</span>
           </div>
         </div>
 

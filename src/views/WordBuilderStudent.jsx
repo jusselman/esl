@@ -115,7 +115,7 @@ export default function WordBuilderStudent() {
     const myEntry = myRank >= 0 ? leaderboard[myRank] : null
 
     return (
-      <div className={styles.root}>
+      <div className={`${styles.root} ${styles.rootNoScroll}`}>
         <div className={styles.orb1} />
         <div className={styles.pattern} />
         <div className={styles.container}>
