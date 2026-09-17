@@ -467,3 +467,117 @@ export function buildWordBuilderLeaderboard(players, progressRows) {
     return b.pointsRemaining - a.pointsRemaining
   })
 }
+
+
+// ─────────────────────────────────────────────────────────────────
+// Synonyms (Vocabulary Builder sub-activity)
+// ─────────────────────────────────────────────────────────────────
+
+// Same Kahoot-style scoring as Grammar Duel: correct answers earn more
+// points the faster they're submitted, wrong answers always score 0.
+export function computeSynonymPoints(correct, timeTakenMs, secondsPerQuestion) {
+  return computeGrammarPoints(correct, timeTakenMs, secondsPerQuestion)
+}
+
+// Called once, when the host clicks "Begin Activity" in the waiting room —
+// kicks off word 0.
+export async function startSynonymDuel(roomCode) {
+  return setState(roomCode, state => ({
+    ...state,
+    activityState: {
+      ...state.activityState,
+      currentQuestionIndex: 0,
+      questionStartedAt: new Date().toISOString(),
+      status: 'active',
+    },
+  }))
+}
+
+// Called when the host clicks "Next Word" after a word's reveal. Moves to
+// the next word, or marks the round finished after the last one.
+export async function advanceSynonymQuestion(roomCode) {
+  return setState(roomCode, state => {
+    const { activityState } = state
+    const nextIndex = activityState.currentQuestionIndex + 1
+    if (nextIndex >= (activityState.questions?.length || 0)) {
+      return { ...state, activityState: { ...activityState, status: 'finished' } }
+    }
+    return {
+      ...state,
+      activityState: {
+        ...activityState,
+        currentQuestionIndex: nextIndex,
+        questionStartedAt: new Date().toISOString(),
+      },
+    }
+  })
+}
+
+export async function submitSynonymAnswer(roomCode, studentId, studentName, questionIndex, questionId, choiceIndex, correct, timeTakenMs, points) {
+  const { data, error } = await supabase
+    .from('synonym_answers')
+    .insert({
+      room_id: roomCode,
+      student_id: studentId,
+      student_name: studentName,
+      question_index: questionIndex,
+      question_id: questionId,
+      choice_index: choiceIndex,
+      correct,
+      time_taken_ms: timeTakenMs,
+      points,
+      answered_at: new Date().toISOString(),
+    })
+    .select()
+
+  if (error) console.error('Error submitting synonym answer:', error)
+  return data?.[0] || null
+}
+
+export async function getSynonymAnswersForRoom(roomCode) {
+  const { data, error } = await supabase
+    .from('synonym_answers')
+    .select('*')
+    .eq('room_id', roomCode)
+    .order('answered_at', { ascending: true })
+
+  if (error) console.error('Error fetching synonym answers:', error)
+  return data || []
+}
+
+export function subscribeToSynonymAnswers(roomCode, callback) {
+  const channel = supabase
+    .channel(`synonyms:${roomCode}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'synonym_answers',
+        filter: `room_id=eq.${roomCode}`,
+      },
+      (payload) => {
+        if (payload.new) callback(payload.new)
+      }
+    )
+    .subscribe()
+
+  return () => supabase.removeChannel(channel)
+}
+
+// Shared by the host (full leaderboard + mini leaderboard) and each student
+// (their own rank) so both compute scores the same way.
+export function buildSynonymLeaderboard(players, answers) {
+  const byId = new Map()
+  players.forEach(p => byId.set(p.id, { id: p.id, name: p.name, avatarId: p.avatarId, points: 0, correct: 0, answered: 0 }))
+  answers.forEach(a => {
+    if (!byId.has(a.student_id)) {
+      byId.set(a.student_id, { id: a.student_id, name: a.student_name, avatarId: null, points: 0, correct: 0, answered: 0 })
+    }
+    const entry = byId.get(a.student_id)
+    entry.points += a.points || 0
+    entry.answered += 1
+    if (a.correct) entry.correct += 1
+  })
+  return [...byId.values()].sort((a, b) => b.points - a.points)
+}

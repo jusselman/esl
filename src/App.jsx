@@ -15,6 +15,9 @@ import VocabularyBuilderMenu from './views/VocabularyBuilderMenu'
 import WordBuilderSetup from './views/WordBuilderSetup'
 import WordBuilderHost from './views/WordBuilderHost'
 import WordBuilderStudent from './views/WordBuilderStudent'
+import SynonymsSetup from './views/SynonymsSetup'
+import SynonymsHost from './views/SynonymsHost'
+import SynonymsStudent from './views/SynonymsStudent'
 
 // ?view=student&room=1234  => student flow
 // Everything else => host flow
@@ -29,6 +32,7 @@ export default function App() {
         <Route path="/reading-comprehension" element={<ReadingComprehensionStudent />} />
         <Route path="/grammar-duel" element={<GrammarDuelStudent />} />
         <Route path="/word-builder" element={<WordBuilderStudent />} />
+        <Route path="/synonyms" element={<SynonymsStudent />} />
         <Route path="*" element={<StudentJoin />} />
       </Routes>
     )
@@ -47,6 +51,8 @@ export default function App() {
       <Route path="/vocabulary-builder" element={<VocabularyBuilderMenu />} />
       <Route path="/host/word-builder" element={<WordBuilderSetup />} />
       <Route path="/word-builder/host" element={<WordBuilderHost />} />
+      <Route path="/host/synonyms" element={<SynonymsSetup />} />
+      <Route path="/synonyms/host" element={<SynonymsHost />} />
     </Routes>
   )
 }
