@@ -581,3 +581,117 @@ export function buildSynonymLeaderboard(players, answers) {
   })
   return [...byId.values()].sort((a, b) => b.points - a.points)
 }
+
+
+// ─────────────────────────────────────────────────────────────────
+// Fill It In (Vocabulary Builder sub-activity)
+// ─────────────────────────────────────────────────────────────────
+
+// Same Kahoot-style scoring as Grammar Duel and Synonyms: correct answers
+// earn more points the faster they're submitted, wrong answers score 0.
+export function computeFillItInPoints(correct, timeTakenMs, secondsPerQuestion) {
+  return computeGrammarPoints(correct, timeTakenMs, secondsPerQuestion)
+}
+
+// Called once, when the host clicks "Begin Activity" in the waiting room —
+// kicks off sentence 0.
+export async function startFillItInRound(roomCode) {
+  return setState(roomCode, state => ({
+    ...state,
+    activityState: {
+      ...state.activityState,
+      currentQuestionIndex: 0,
+      questionStartedAt: new Date().toISOString(),
+      status: 'active',
+    },
+  }))
+}
+
+// Called when the host clicks "Next Sentence" after a sentence's reveal.
+// Moves to the next sentence, or marks the round finished after the last one.
+export async function advanceFillItInQuestion(roomCode) {
+  return setState(roomCode, state => {
+    const { activityState } = state
+    const nextIndex = activityState.currentQuestionIndex + 1
+    if (nextIndex >= (activityState.questions?.length || 0)) {
+      return { ...state, activityState: { ...activityState, status: 'finished' } }
+    }
+    return {
+      ...state,
+      activityState: {
+        ...activityState,
+        currentQuestionIndex: nextIndex,
+        questionStartedAt: new Date().toISOString(),
+      },
+    }
+  })
+}
+
+export async function submitFillItInAnswer(roomCode, studentId, studentName, questionIndex, questionId, choiceIndex, correct, timeTakenMs, points) {
+  const { data, error } = await supabase
+    .from('fill_it_in_answers')
+    .insert({
+      room_id: roomCode,
+      student_id: studentId,
+      student_name: studentName,
+      question_index: questionIndex,
+      question_id: questionId,
+      choice_index: choiceIndex,
+      correct,
+      time_taken_ms: timeTakenMs,
+      points,
+      answered_at: new Date().toISOString(),
+    })
+    .select()
+
+  if (error) console.error('Error submitting fill it in answer:', error)
+  return data?.[0] || null
+}
+
+export async function getFillItInAnswersForRoom(roomCode) {
+  const { data, error } = await supabase
+    .from('fill_it_in_answers')
+    .select('*')
+    .eq('room_id', roomCode)
+    .order('answered_at', { ascending: true })
+
+  if (error) console.error('Error fetching fill it in answers:', error)
+  return data || []
+}
+
+export function subscribeToFillItInAnswers(roomCode, callback) {
+  const channel = supabase
+    .channel(`fill-it-in:${roomCode}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'fill_it_in_answers',
+        filter: `room_id=eq.${roomCode}`,
+      },
+      (payload) => {
+        if (payload.new) callback(payload.new)
+      }
+    )
+    .subscribe()
+
+  return () => supabase.removeChannel(channel)
+}
+
+// Shared by the host (full leaderboard + mini leaderboard) and each student
+// (their own rank) so both compute scores the same way.
+export function buildFillItInLeaderboard(players, answers) {
+  const byId = new Map()
+  players.forEach(p => byId.set(p.id, { id: p.id, name: p.name, avatarId: p.avatarId, points: 0, correct: 0, answered: 0 }))
+  answers.forEach(a => {
+    if (!byId.has(a.student_id)) {
+      byId.set(a.student_id, { id: a.student_id, name: a.student_name, avatarId: null, points: 0, correct: 0, answered: 0 })
+    }
+    const entry = byId.get(a.student_id)
+    entry.points += a.points || 0
+    entry.answered += 1
+    if (a.correct) entry.correct += 1
+  })
+  return [...byId.values()].sort((a, b) => b.points - a.points)
+}

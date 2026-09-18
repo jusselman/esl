@@ -81,7 +81,7 @@ export default function GrammarDuelHost() {
   const elapsedMs = now - startMs
   const totalMs = (secondsPerQuestion || 20) * 1000
   const remainingSecs = Math.max(0, Math.ceil((totalMs - elapsedMs) / 1000))
-  const timeUp = elapsedMs >= totalMs
+  const elapsedTimeUp = elapsedMs >= totalMs
 
   const currentAnswers = currentQuestion
     ? answers.filter(a => a.question_index === currentQuestionIndex)
@@ -90,6 +90,13 @@ export default function GrammarDuelHost() {
   currentAnswers.forEach(a => { if (a.choice_index >= 0 && a.choice_index < 4) choiceCounts[a.choice_index]++ })
   const answeredCount = currentAnswers.length
   const isLastQuestion = currentQuestionIndex === questions.length - 1
+
+  // Once every joined student has answered, nobody's left to wait on — close
+  // the question out right away instead of sitting through the rest of the
+  // clock. Requires the FULL roster to have answered (not just some), so a
+  // student who hasn't submitted yet still keeps their full time to answer.
+  const allAnswered = allPlayers.length > 0 && answeredCount >= allPlayers.length
+  const timeUp = elapsedTimeUp || allAnswered
 
   const leaderboard = buildGrammarLeaderboard(allPlayers, answers)
 
@@ -238,7 +245,7 @@ export default function GrammarDuelHost() {
         <div className={styles.activityTag}>{themeEmoji} {themeTitle}</div>
         <div className={styles.progressTag}>Question {currentQuestionIndex + 1} of {questions.length}</div>
         <div className={`${styles.timerTag} ${remainingSecs <= 5 && !timeUp ? styles.timerTagWarning : ''}`}>
-          {timeUp ? "Time's up!" : `${remainingSecs}s`}
+          {timeUp ? (allAnswered && !elapsedTimeUp ? 'All answered!' : "Time's up!") : `${remainingSecs}s`}
         </div>
       </header>
 

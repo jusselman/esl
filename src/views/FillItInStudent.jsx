@@ -3,17 +3,17 @@ import { useSearchParams } from 'react-router-dom'
 import {
   getState,
   subscribeToRoom,
-  getSynonymAnswersForRoom,
-  subscribeToSynonymAnswers,
-  submitSynonymAnswer,
-  computeSynonymPoints,
-  buildSynonymLeaderboard,
+  getFillItInAnswersForRoom,
+  subscribeToFillItInAnswers,
+  submitFillItInAnswer,
+  computeFillItInPoints,
+  buildFillItInLeaderboard,
 } from '../store/gameStore'
-import styles from './SynonymsStudent.module.css'
+import styles from './FillItInStudent.module.css'
 
 const CHOICE_LETTERS = ['A', 'B', 'C', 'D']
 
-export default function SynonymsStudent() {
+export default function FillItInStudent() {
   const [params] = useSearchParams()
   const roomCode = params.get('room') || '????'
 
@@ -38,10 +38,10 @@ export default function SynonymsStudent() {
       if (storedPlayer) setMyPlayer(JSON.parse(storedPlayer))
     })
 
-    getSynonymAnswersForRoom(roomCode).then(setAnswers)
+    getFillItInAnswersForRoom(roomCode).then(setAnswers)
 
     const unsubscribeRoom = subscribeToRoom(roomCode, setGameState)
-    const unsubscribeAnswers = subscribeToSynonymAnswers(roomCode, (newAnswer) => {
+    const unsubscribeAnswers = subscribeToFillItInAnswers(roomCode, (newAnswer) => {
       setAnswers(prev => (prev.some(a => a.id === newAnswer.id) ? prev : [...prev, newAnswer]))
     })
 
@@ -76,7 +76,7 @@ export default function SynonymsStudent() {
 
   // ── FINISHED: my results ────────────────────────────────────
   if (status === 'finished') {
-    const leaderboard = buildSynonymLeaderboard(gameState.players || [], answers)
+    const leaderboard = buildFillItInLeaderboard(gameState.players || [], answers)
     const myRank = leaderboard.findIndex(e => e.id === myPlayer.id)
     const myEntry = myRank >= 0 ? leaderboard[myRank] : null
 
@@ -86,8 +86,8 @@ export default function SynonymsStudent() {
         <div className={styles.pattern} />
         <div className={styles.container}>
           <div className={styles.resultsPhase}>
-            <img src="/karate.png" alt="Pacey" className={styles.turtleImage} />
-            <h2 className={styles.resultsMessage}>Nice vocabulary, {myPlayer.name}!</h2>
+            <img src="/nerdTurtle.png" alt="Pacey" className={styles.turtleImage} />
+            <h2 className={styles.resultsMessage}>Nice work, {myPlayer.name}!</h2>
             <div className={styles.statsBox}>
               <div className={styles.statItem}>
                 <span className={styles.statLabel}>Your Rank</span>
@@ -111,7 +111,7 @@ export default function SynonymsStudent() {
   // ── ACTIVE: question or reveal ──────────────────────────────
   const currentQuestion = questions[currentQuestionIndex]
   if (!currentQuestion) {
-    return <div className={styles.root}>Loading word...</div>
+    return <div className={styles.root}>Loading sentence...</div>
   }
 
   const startMs = questionStartedAt ? new Date(questionStartedAt).getTime() : now
@@ -135,12 +135,12 @@ export default function SynonymsStudent() {
     if (locked || timeUp) return
     const timeTakenMs = Math.min(elapsedMs, totalMs)
     const correct = choiceIndex === currentQuestion.correctIndex
-    const points = computeSynonymPoints(correct, timeTakenMs, secondsPerQuestion || 20)
+    const points = computeFillItInPoints(correct, timeTakenMs, secondsPerQuestion || 20)
 
     // Lock in immediately for a snappy UI — the write happens in the background.
     setMyAnswersByIndex(prev => ({ ...prev, [currentQuestionIndex]: { choiceIndex, correct, points } }))
 
-    await submitSynonymAnswer(
+    await submitFillItInAnswer(
       roomCode, myPlayer.id, myPlayer.name,
       currentQuestionIndex, currentQuestion.id,
       choiceIndex, correct, timeTakenMs, points
@@ -161,8 +161,8 @@ export default function SynonymsStudent() {
 
       <div className={styles.container}>
         <div className={styles.questionPhase}>
-          <div className={styles.progressLabel}>Word {currentQuestionIndex + 1} of {questions.length}</div>
-          <h1 className={styles.phaseTitle}>{currentQuestion.clue}</h1>
+          <div className={styles.progressLabel}>Sentence {currentQuestionIndex + 1} of {questions.length}</div>
+          <h1 className={styles.phaseTitle}>{currentQuestion.sentence}</h1>
 
           <div className={styles.choicesGrid}>
             {currentQuestion.choices.map((choice, i) => {
@@ -190,10 +190,10 @@ export default function SynonymsStudent() {
           </div>
 
           {!timeUp && locked && (
-            <p className={styles.phaseInstruction}>You're locked in — waiting for the timer…</p>
+            <p className={styles.phaseInstruction}>You're locked in — waiting for the rest of the class…</p>
           )}
           {!timeUp && !locked && (
-            <p className={styles.phaseInstruction}>Tap the word that matches the clue.</p>
+            <p className={styles.phaseInstruction}>Tap the word that completes the sentence.</p>
           )}
           {timeUp && (
             <div className={styles.revealBanner}>

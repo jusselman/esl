@@ -24,14 +24,14 @@ const SUB_ACTIVITIES = [
     color: '#d66e55',
   },
   {
-    id: 'coming-soon-2',
-    label: 'More Coming Soon',
-    description: 'A third Vocabulary Builder game is on the way.',
-    icon: '✦',
-    status: 'coming-soon',
-    skills: ['Vocabulary'],
-    path: null,
-    color: '#f6db96',
+    id: 'fill-it-in',
+    label: 'Fill It In',
+    description: 'Read a sentence with a missing word and choose the word that completes it.',
+    icon: '✏️',
+    status: 'ready',
+    skills: ['Vocabulary', 'Reading Comprehension', 'Grammar in Context'],
+    path: '/host/fill-it-in',
+    color: '#2E9E90',
   },
 ]
 

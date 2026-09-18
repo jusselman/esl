@@ -1,29 +1,30 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
 import {
   getState,
   subscribeToRoom,
-  getProgressForRoom,
-  subscribeToWordProgress,
-  startWordBuilder,
-  finishWordBuilder,
-  buildWordBuilderLeaderboard,
-  WORD_BUILDER_STARTING_POINTS,
+  getFillItInAnswersForRoom,
+  subscribeToFillItInAnswers,
+  startFillItInRound,
+  advanceFillItInQuestion,
+  buildFillItInLeaderboard,
   AVATARS,
 } from '../store/gameStore'
-import styles from './WordBuilderHost.module.css'
+import styles from './FillItInHost.module.css'
 
-export default function WordBuilderHost() {
+const CHOICE_LETTERS = ['A', 'B', 'C', 'D']
+
+export default function FillItInHost() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const roomCode = params.get('room')
 
   const [gameState, setGameState] = useState(null)
-  const [progressRows, setProgressRows] = useState([])
+  const [answers, setAnswers] = useState([])
   const [starting, setStarting] = useState(false)
+  const [advancing, setAdvancing] = useState(false)
   const [now, setNow] = useState(Date.now())
-  const finishingRef = useRef(false)
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000)
@@ -34,59 +35,26 @@ export default function WordBuilderHost() {
     if (!roomCode) return
 
     getState(roomCode).then(setGameState)
-    getProgressForRoom(roomCode).then(setProgressRows)
+    getFillItInAnswersForRoom(roomCode).then(setAnswers)
 
     const unsubscribeRoom = subscribeToRoom(roomCode, setGameState)
-    const unsubscribeProgress = subscribeToWordProgress(roomCode, (row) => {
-      setProgressRows(prev => [...prev.filter(p => p.student_id !== row.student_id), row])
+    const unsubscribeAnswers = subscribeToFillItInAnswers(roomCode, (newAnswer) => {
+      setAnswers(prev => (prev.some(a => a.id === newAnswer.id) ? prev : [...prev, newAnswer]))
     })
 
     // Safety-net poll in case the realtime publication isn't enabled for
-    // word_builder_progress (same fallback used for reading_responses and
-    // grammar_answers).
+    // fill_it_in_answers (same fallback used for grammar_answers and
+    // synonym_answers).
     const pollInterval = setInterval(() => {
-      getProgressForRoom(roomCode).then(setProgressRows)
+      getFillItInAnswersForRoom(roomCode).then(setAnswers)
     }, 3000)
 
     return () => {
       unsubscribeRoom?.()
-      unsubscribeProgress?.()
+      unsubscribeAnswers?.()
       clearInterval(pollInterval)
     }
   }, [roomCode])
-
-  const { activityState = {} } = gameState || {}
-  const { themeTitle, themeEmoji, timeLimitSecs, words = [], startedAt, status = 'lobby' } = activityState
-  const allPlayers = (gameState && gameState.players) || []
-  const avatarMap = Object.fromEntries(AVATARS.map(a => [a.id, a]))
-  const joinUrl = `${window.location.origin}/?view=student&room=${roomCode}`
-
-  const startMs = startedAt ? new Date(startedAt).getTime() : now
-  const elapsedMs = now - startMs
-  const totalMs = (timeLimitSecs || 300) * 1000
-  const remainingSecs = Math.max(0, Math.ceil((totalMs - elapsedMs) / 1000))
-  const timeUp = elapsedMs >= totalMs
-  const displaySecs = status === 'finished' ? 0 : remainingSecs
-  const minutes = Math.floor(displaySecs / 60)
-  const seconds = displaySecs % 60
-
-  const leaderboard = buildWordBuilderLeaderboard(allPlayers, progressRows)
-
-  // Once every joined student has either built every word or run out of
-  // points, there's nobody left still working — end the round right away
-  // instead of making the whole class sit out the rest of the shared timer.
-  const progressByStudent = Object.fromEntries(progressRows.map(row => [row.student_id, row]))
-  const allPlayersFinished = allPlayers.length > 0 && allPlayers.every(p => progressByStudent[p.id]?.finished)
-
-  // Auto-finish the room once the shared timer runs out (or everyone's
-  // already done), so a student who never opens their own screen again
-  // still ends up in the final results.
-  useEffect(() => {
-    if (status === 'active' && (timeUp || allPlayersFinished) && !finishingRef.current) {
-      finishingRef.current = true
-      finishWordBuilder(roomCode)
-    }
-  }, [status, timeUp, allPlayersFinished, roomCode])
 
   if (!gameState) {
     return (
@@ -96,13 +64,56 @@ export default function WordBuilderHost() {
     )
   }
 
+  const { activityState = {} } = gameState
+  const {
+    tierTitle, tierEmoji, secondsPerQuestion, questions = [],
+    currentQuestionIndex = -1, questionStartedAt, status = 'lobby',
+  } = activityState
+  const allPlayers = gameState.players || []
+  const avatarMap = Object.fromEntries(AVATARS.map(a => [a.id, a]))
+  const joinUrl = `${window.location.origin}/?view=student&room=${roomCode}`
+
+  const currentQuestion = currentQuestionIndex >= 0 ? questions[currentQuestionIndex] : null
+  const startMs = questionStartedAt ? new Date(questionStartedAt).getTime() : now
+  const elapsedMs = now - startMs
+  const totalMs = (secondsPerQuestion || 20) * 1000
+  const remainingSecs = Math.max(0, Math.ceil((totalMs - elapsedMs) / 1000))
+  const elapsedTimeUp = elapsedMs >= totalMs
+
+  const currentAnswers = currentQuestion
+    ? answers.filter(a => a.question_index === currentQuestionIndex)
+    : []
+  const choiceCounts = [0, 0, 0, 0]
+  currentAnswers.forEach(a => { if (a.choice_index >= 0 && a.choice_index < 4) choiceCounts[a.choice_index]++ })
+  const answeredCount = currentAnswers.length
+  const isLastQuestion = currentQuestionIndex === questions.length - 1
+
+  // Once every joined student has answered, nobody's left to wait on — close
+  // the question out right away instead of sitting through the rest of the
+  // clock. Requires the FULL roster to have answered (not just some), so a
+  // student who hasn't submitted yet still keeps their full time to answer.
+  const allAnswered = allPlayers.length > 0 && answeredCount >= allPlayers.length
+  const timeUp = elapsedTimeUp || allAnswered
+
+  const leaderboard = buildFillItInLeaderboard(allPlayers, answers)
+
   async function handleBeginActivity() {
     if (status !== 'lobby' || starting) return
     setStarting(true)
     try {
-      await startWordBuilder(roomCode)
+      await startFillItInRound(roomCode)
     } finally {
       setStarting(false)
+    }
+  }
+
+  async function handleNext() {
+    if (advancing) return
+    setAdvancing(true)
+    try {
+      await advanceFillItInQuestion(roomCode)
+    } finally {
+      setAdvancing(false)
     }
   }
 
@@ -115,7 +126,7 @@ export default function WordBuilderHost() {
         <div className={styles.pattern} />
 
         <header className={styles.header}>
-          <div className={styles.activityTag}>Word Builder — {themeEmoji} {themeTitle}</div>
+          <div className={styles.activityTag}>Fill It In — {tierEmoji} {tierTitle}</div>
         </header>
 
         <div className={styles.body}>
@@ -135,7 +146,7 @@ export default function WordBuilderHost() {
             <ol className={styles.instructions}>
               <li>Scan the QR code</li>
               <li>Enter your name</li>
-              <li>Wait for the round to begin</li>
+              <li>Wait for the first sentence</li>
             </ol>
             <div className={styles.mascotFooter}>
               <img src="/reclining.png" alt="Pacey" className={styles.panelMascot} />
@@ -191,7 +202,7 @@ export default function WordBuilderHost() {
         <div className={styles.pattern} />
 
         <div className={styles.finishedWrap}>
-          <h1 className={styles.finishedTitle}>Time's Up!</h1>
+          <h1 className={styles.finishedTitle}>Round Complete!</h1>
           <div className={styles.leaderboardCard}>
             {leaderboard.map((entry, i) => {
               const avatar = avatarMap[entry.avatarId] || AVATARS[0]
@@ -200,8 +211,8 @@ export default function WordBuilderHost() {
                   <span className={styles.leaderRank}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
                   <span className={styles.leaderAvatar} style={{ background: avatar.color + '33', borderColor: avatar.color }}>{avatar.emoji}</span>
                   <span className={styles.leaderName}>{entry.name}</span>
-                  <span className={styles.leaderStat}>{entry.wordsCompleted} word{entry.wordsCompleted !== 1 ? 's' : ''}</span>
-                  <span className={styles.leaderPoints}>{entry.pointsRemaining} pts left</span>
+                  <span className={styles.leaderStat}>{entry.correct}/{questions.length} correct</span>
+                  <span className={styles.leaderPoints}>{entry.points} pts</span>
                 </div>
               )
             })}
@@ -212,7 +223,15 @@ export default function WordBuilderHost() {
     )
   }
 
-  // ── ACTIVE: live leaderboard, self-paced ────────────────────
+  // ── ACTIVE: question or reveal ──────────────────────────────
+  if (!currentQuestion) {
+    return (
+      <div className={styles.root}>
+        <div className={styles.loading}>Loading sentence...</div>
+      </div>
+    )
+  }
+
   return (
     <div className={styles.root}>
       <div className={styles.orb1} />
@@ -220,36 +239,66 @@ export default function WordBuilderHost() {
       <div className={styles.pattern} />
 
       <header className={styles.header}>
-        <div className={styles.activityTag}>{themeEmoji} {themeTitle}</div>
-        <div className={styles.progressTag}>{words.length} words per student</div>
-        <div className={`${styles.timerTag} ${remainingSecs <= 30 && !timeUp ? styles.timerTagWarning : ''}`}>
-          {timeUp ? "Time's up!" : `${minutes}:${String(seconds).padStart(2, '0')}`}
+        <div className={styles.activityTag}>{tierEmoji} {tierTitle}</div>
+        <div className={styles.progressTag}>Sentence {currentQuestionIndex + 1} of {questions.length}</div>
+        <div className={`${styles.timerTag} ${remainingSecs <= 5 && !timeUp ? styles.timerTagWarning : ''}`}>
+          {timeUp ? (allAnswered && !elapsedTimeUp ? 'All answered!' : "Time's up!") : `${remainingSecs}s`}
         </div>
       </header>
 
-      <div className={styles.liveWrap}>
-        <div className={styles.leaderboardCard}>
-          {leaderboard.length > 0 ? (
-            leaderboard.map((entry, i) => {
+      <div className={styles.questionCard}>
+        <div className={styles.categoryBadge}>{currentQuestion.partOfSpeech}</div>
+        <h2 className={styles.questionPrompt}>{currentQuestion.sentence}</h2>
+
+        <div className={styles.choicesGrid}>
+          {currentQuestion.choices.map((choice, i) => {
+            const isCorrect = i === currentQuestion.correctIndex
+            const count = choiceCounts[i]
+            const showReveal = timeUp
+            return (
+              <div
+                key={i}
+                className={`${styles.choiceCard} ${showReveal && isCorrect ? styles.choiceCardCorrect : ''} ${showReveal && !isCorrect ? styles.choiceCardFaded : ''}`}
+              >
+                <span className={styles.choiceLetter}>{CHOICE_LETTERS[i]}</span>
+                <span className={styles.choiceText}>{choice}</span>
+                {showReveal && (
+                  <span className={styles.choiceCount}>{count}</span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {timeUp && (
+          <p className={styles.explanationText}>{currentQuestion.explanation}</p>
+        )}
+
+        {!timeUp && (
+          <p className={styles.answeredHint}>{answeredCount}/{allPlayers.length} answered</p>
+        )}
+      </div>
+
+      {timeUp && (
+        <div className={styles.revealFooter}>
+          <div className={styles.miniLeaderboard}>
+            {leaderboard.slice(0, 5).map((entry, i) => {
               const avatar = avatarMap[entry.avatarId] || AVATARS[0]
               return (
-                <div
-                  key={entry.id}
-                  className={`${styles.leaderRow} ${i < 3 ? styles.leaderRowTop : ''} ${entry.finished ? styles.leaderRowFinished : ''}`}
-                >
-                  <span className={styles.leaderRank}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
-                  <span className={styles.leaderAvatar} style={{ background: avatar.color + '33', borderColor: avatar.color }}>{avatar.emoji}</span>
-                  <span className={styles.leaderName}>{entry.name}</span>
-                  <span className={styles.leaderStat}>{entry.wordsCompleted} word{entry.wordsCompleted !== 1 ? 's' : ''}</span>
-                  <span className={styles.leaderPoints}>{entry.pointsRemaining}/{WORD_BUILDER_STARTING_POINTS} pts</span>
+                <div key={entry.id} className={styles.miniLeaderRow}>
+                  <span className={styles.miniLeaderRank}>#{i + 1}</span>
+                  <span className={styles.miniLeaderAvatar} style={{ background: avatar.color + '33', borderColor: avatar.color }}>{avatar.emoji}</span>
+                  <span className={styles.miniLeaderName}>{entry.name}</span>
+                  <span className={styles.miniLeaderPoints}>{entry.points} pts</span>
                 </div>
               )
-            })
-          ) : (
-            <div className={styles.emptyState}><p>Waiting for students to start building words...</p></div>
-          )}
+            })}
+          </div>
+          <button className={styles.primaryBtn} onClick={handleNext} disabled={advancing}>
+            {advancing ? 'Loading…' : isLastQuestion ? 'Show Final Results' : 'Next Sentence'}
+          </button>
         </div>
-      </div>
+      )}
     </div>
   )
 }

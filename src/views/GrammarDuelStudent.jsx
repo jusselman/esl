@@ -122,7 +122,15 @@ export default function GrammarDuelStudent() {
   const elapsedMs = now - startMs
   const totalMs = (secondsPerQuestion || 20) * 1000
   const remainingSecs = Math.max(0, Math.ceil((totalMs - elapsedMs) / 1000))
-  const timeUp = elapsedMs >= totalMs
+  const elapsedTimeUp = elapsedMs >= totalMs
+
+  // Mirrors the host: once every joined student (including this one) has
+  // answered, close the question out immediately rather than waiting for
+  // the clock — `answers` already carries the whole room's submissions.
+  const currentAnswerCount = answers.filter(a => a.question_index === currentQuestionIndex).length
+  const roomPlayerCount = (gameState.players || []).length
+  const allAnswered = roomPlayerCount > 0 && currentAnswerCount >= roomPlayerCount
+  const timeUp = elapsedTimeUp || allAnswered
 
   const myAnswer = myAnswersByIndex[currentQuestionIndex]
   const locked = !!myAnswer
