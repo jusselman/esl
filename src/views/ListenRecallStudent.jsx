@@ -1,0 +1,311 @@
+import React, { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import {
+  getState,
+  subscribeToRoom,
+  getListenRecallAnswersForRoom,
+  subscribeToListenRecallAnswers,
+  submitListenRecallAnswer,
+  computeListenRecallPoints,
+  buildListenRecallLeaderboard,
+} from '../store/gameStore'
+import styles from './ListenRecallStudent.module.css'
+
+const CHOICE_LETTERS = ['A', 'B', 'C', 'D']
+
+// Picks a reasonable English voice once the browser has loaded its voice
+// list (which can happen asynchronously, especially on first load).
+function pickEnglishVoice() {
+  if (!('speechSynthesis' in window)) return null
+  const voices = window.speechSynthesis.getVoices()
+  return (
+    voices.find(v => v.lang === 'en-US' && /female|natural|samantha|google us/i.test(v.name)) ||
+    voices.find(v => v.lang?.startsWith('en')) ||
+    voices[0] ||
+    null
+  )
+}
+
+export default function ListenRecallStudent() {
+  const [params] = useSearchParams()
+  const roomCode = params.get('room') || '????'
+
+  const [gameState, setGameState] = useState(null)
+  const [myPlayer, setMyPlayer] = useState(null)
+  const [answers, setAnswers] = useState([])
+  const [myAnswersByIndex, setMyAnswersByIndex] = useState({})
+  const [now, setNow] = useState(Date.now())
+
+  // 'idle' | 'playing' | 'ended' | 'unsupported'
+  const [playback, setPlayback] = useState('idle')
+  const utteranceRef = useRef(null)
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 250)
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    if (!roomCode || roomCode === '????') return
+
+    getState(roomCode).then(state => {
+      setGameState(state)
+      const storedPlayer = sessionStorage.getItem(`player_${roomCode}`)
+      if (storedPlayer) setMyPlayer(JSON.parse(storedPlayer))
+    })
+
+    getListenRecallAnswersForRoom(roomCode).then(setAnswers)
+
+    const unsubscribeRoom = subscribeToRoom(roomCode, setGameState)
+    const unsubscribeAnswers = subscribeToListenRecallAnswers(roomCode, (newAnswer) => {
+      setAnswers(prev => (prev.some(a => a.id === newAnswer.id) ? prev : [...prev, newAnswer]))
+    })
+
+    return () => {
+      unsubscribeRoom?.()
+      unsubscribeAnswers?.()
+    }
+  }, [roomCode])
+
+  // Stop any speech in progress if the student navigates away or the room
+  // moves on from the listening phase.
+  useEffect(() => {
+    return () => {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel()
+    }
+  }, [])
+
+  if (!gameState || !myPlayer) {
+    return <div className={styles.root}>Loading...</div>
+  }
+
+  const { activityState = {} } = gameState
+  const {
+    categoryTitle, categoryEmoji, storyTitle, storyText, durationLabel,
+    secondsPerQuestion, questions = [], currentQuestionIndex = -1,
+    questionStartedAt, status = 'lobby',
+  } = activityState
+
+  function handlePlay() {
+    if (!('speechSynthesis' in window)) {
+      setPlayback('unsupported')
+      return
+    }
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(storyText)
+    utterance.rate = 0.92
+    utterance.pitch = 1
+    const voice = pickEnglishVoice()
+    if (voice) utterance.voice = voice
+    utterance.onend = () => setPlayback('ended')
+    utterance.onerror = () => setPlayback('ended')
+    utteranceRef.current = utterance
+    setPlayback('playing')
+    window.speechSynthesis.speak(utterance)
+  }
+
+  // ── LOBBY: waiting for the teacher to begin ─────────────────
+  if (status === 'lobby') {
+    return (
+      <div className={styles.root}>
+        <div className={styles.orb1} />
+        <div className={styles.pattern} />
+        <div className={styles.waitingCard}>
+          <h2 className={styles.waitingTitle}>You're in!</h2>
+          <p className={styles.waitingText}>
+            {categoryTitle ? `${categoryEmoji} ${categoryTitle} — waiting for your teacher to start…` : 'Waiting for your teacher to start…'}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // ── LISTENING: play the story on this device ────────────────
+  if (status === 'listening') {
+    return (
+      <div className={styles.root}>
+        <div className={styles.orb1} />
+        <div className={styles.pattern} />
+        <div className={styles.waitingCard}>
+          <h2 className={styles.waitingTitle}>🎧 {storyTitle}</h2>
+          <p className={styles.waitingText}>{categoryEmoji} {categoryTitle} · {durationLabel}</p>
+
+          {playback === 'idle' && (
+            <>
+              <button className={styles.joinBtn} onClick={handlePlay} style={{ marginTop: 16 }}>
+                ▶ Play Story
+              </button>
+              <p className={styles.waitingText} style={{ marginTop: 12 }}>
+                Put on headphones if you have them, then tap Play.
+              </p>
+            </>
+          )}
+
+          {playback === 'playing' && (
+            <p className={styles.waitingText} style={{ marginTop: 16 }}>
+              Playing… listen carefully, the questions come next.
+            </p>
+          )}
+
+          {playback === 'ended' && (
+            <p className={styles.waitingText} style={{ marginTop: 16 }}>
+              ✓ Done — waiting for your teacher to start the questions…
+            </p>
+          )}
+
+          {playback === 'unsupported' && (
+            <div style={{ marginTop: 16 }}>
+              <p className={styles.waitingText}>
+                This device can't read the story aloud — read it here instead:
+              </p>
+              <p className={styles.waitingText} style={{ fontStyle: 'italic', marginTop: 8 }}>
+                {storyText}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── FINISHED: my results ────────────────────────────────────
+  if (status === 'finished') {
+    const leaderboard = buildListenRecallLeaderboard(gameState.players || [], answers)
+    const myRank = leaderboard.findIndex(e => e.id === myPlayer.id)
+    const myEntry = myRank >= 0 ? leaderboard[myRank] : null
+
+    return (
+      <div className={styles.root}>
+        <div className={styles.orb1} />
+        <div className={styles.pattern} />
+        <div className={styles.container}>
+          <div className={styles.resultsPhase}>
+            <img src="/nerdTurtle.png" alt="Pacey" className={styles.turtleImage} />
+            <h2 className={styles.resultsMessage}>Nice listening, {myPlayer.name}!</h2>
+            <div className={styles.statsBox}>
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>Your Rank</span>
+                <span className={styles.statValue}>{myRank >= 0 ? `#${myRank + 1} of ${leaderboard.length}` : '—'}</span>
+              </div>
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>Correct</span>
+                <span className={styles.statValue}>{myEntry ? `${myEntry.correct}/${questions.length}` : `0/${questions.length}`}</span>
+              </div>
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>Total Points</span>
+                <span className={styles.statValue}>{myEntry?.points || 0}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── ACTIVE: question or reveal ──────────────────────────────
+  const currentQuestion = questions[currentQuestionIndex]
+  if (!currentQuestion) {
+    return <div className={styles.root}>Loading question...</div>
+  }
+
+  const startMs = questionStartedAt ? new Date(questionStartedAt).getTime() : now
+  const elapsedMs = now - startMs
+  const totalMs = (secondsPerQuestion || 10) * 1000
+  const remainingSecs = Math.max(0, Math.ceil((totalMs - elapsedMs) / 1000))
+  const elapsedTimeUp = elapsedMs >= totalMs
+
+  // Mirrors the host: once every joined student (including this one) has
+  // answered, close the question out immediately rather than waiting for
+  // the clock — `answers` already carries the whole room's submissions.
+  const currentAnswerCount = answers.filter(a => a.question_index === currentQuestionIndex).length
+  const roomPlayerCount = (gameState.players || []).length
+  const allAnswered = roomPlayerCount > 0 && currentAnswerCount >= roomPlayerCount
+  const timeUp = elapsedTimeUp || allAnswered
+
+  const myAnswer = myAnswersByIndex[currentQuestionIndex]
+  const locked = !!myAnswer
+
+  async function handleChoose(choiceIndex) {
+    if (locked || timeUp) return
+    const timeTakenMs = Math.min(elapsedMs, totalMs)
+    const correct = choiceIndex === currentQuestion.correctIndex
+    const points = computeListenRecallPoints(correct, timeTakenMs, secondsPerQuestion || 10)
+
+    // Lock in immediately for a snappy UI — the write happens in the background.
+    setMyAnswersByIndex(prev => ({ ...prev, [currentQuestionIndex]: { choiceIndex, correct, points } }))
+
+    await submitListenRecallAnswer(
+      roomCode, myPlayer.id, myPlayer.name,
+      currentQuestionIndex, currentQuestion.id,
+      choiceIndex, correct, timeTakenMs, points
+    )
+  }
+
+  return (
+    <div className={styles.root}>
+      <div className={styles.orb1} />
+      <div className={styles.pattern} />
+
+      <div className={styles.timerFixed}>
+        <div className={styles.timerLabel}>Time Left</div>
+        <div className={`${styles.timer} ${remainingSecs <= 3 && !timeUp ? styles.warning : ''}`}>
+          {timeUp ? '0:00' : `0:${String(remainingSecs).padStart(2, '0')}`}
+        </div>
+      </div>
+
+      <div className={styles.container}>
+        <div className={styles.questionPhase}>
+          <div className={styles.progressLabel}>Question {currentQuestionIndex + 1} of {questions.length}</div>
+          <h1 className={styles.phaseTitle}>{currentQuestion.prompt}</h1>
+
+          <div className={styles.choicesGrid}>
+            {currentQuestion.choices.map((choice, i) => {
+              const isMine = myAnswer?.choiceIndex === i
+              const isCorrectChoice = i === currentQuestion.correctIndex
+              const showReveal = timeUp
+              let cardClass = styles.choiceCard
+              if (showReveal && isCorrectChoice) cardClass += ` ${styles.choiceCardCorrect}`
+              else if (showReveal && isMine && !isCorrectChoice) cardClass += ` ${styles.choiceCardWrong}`
+              else if (showReveal) cardClass += ` ${styles.choiceCardFaded}`
+              else if (isMine) cardClass += ` ${styles.choiceCardSelected}`
+
+              return (
+                <button
+                  key={i}
+                  className={cardClass}
+                  onClick={() => handleChoose(i)}
+                  disabled={locked || timeUp}
+                >
+                  <span className={styles.choiceLetter}>{CHOICE_LETTERS[i]}</span>
+                  <span className={styles.choiceText}>{choice}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          {!timeUp && locked && (
+            <p className={styles.phaseInstruction}>You're locked in — waiting for the rest of the class…</p>
+          )}
+          {!timeUp && !locked && (
+            <p className={styles.phaseInstruction}>Tap the correct answer.</p>
+          )}
+          {timeUp && (
+            <div className={styles.revealBanner}>
+              {myAnswer ? (
+                myAnswer.correct ? (
+                  <span className={styles.revealCorrect}>Correct! +{myAnswer.points} points</span>
+                ) : (
+                  <span className={styles.revealWrong}>Not quite — 0 points</span>
+                )
+              ) : (
+                <span className={styles.revealWrong}>Time's up — no answer submitted</span>
+              )}
+              <p className={styles.explanationText}>{currentQuestion.explanation}</p>
+              <p className={styles.phaseInstruction}>Waiting for your teacher to continue…</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

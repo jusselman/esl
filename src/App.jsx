@@ -21,6 +21,10 @@ import SynonymsStudent from './views/SynonymsStudent'
 import FillItInSetup from './views/FillItInSetup'
 import FillItInHost from './views/FillItInHost'
 import FillItInStudent from './views/FillItInStudent'
+import StoryTimeMenu from './views/StoryTimeMenu'
+import ListenRecallSetup from './views/ListenRecallSetup'
+import ListenRecallHost from './views/ListenRecallHost'
+import ListenRecallStudent from './views/ListenRecallStudent'
 
 // ?view=student&room=1234  => student flow
 // Everything else => host flow
@@ -37,6 +41,7 @@ export default function App() {
         <Route path="/word-builder" element={<WordBuilderStudent />} />
         <Route path="/synonyms" element={<SynonymsStudent />} />
         <Route path="/fill-it-in" element={<FillItInStudent />} />
+        <Route path="/listen-recall" element={<ListenRecallStudent />} />
         <Route path="*" element={<StudentJoin />} />
       </Routes>
     )
@@ -59,6 +64,9 @@ export default function App() {
       <Route path="/synonyms/host" element={<SynonymsHost />} />
       <Route path="/host/fill-it-in" element={<FillItInSetup />} />
       <Route path="/fill-it-in/host" element={<FillItInHost />} />
+      <Route path="/story-time" element={<StoryTimeMenu />} />
+      <Route path="/host/listen-recall" element={<ListenRecallSetup />} />
+      <Route path="/listen-recall/host" element={<ListenRecallHost />} />
     </Routes>
   )
 }

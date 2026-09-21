@@ -36,12 +36,12 @@ const ACTIVITIES = [
   },
   {
     id: 'listen',
-    label: 'Story Circle',
-    description: 'Students listen to an AI-narrated passage and reconstruct it collaboratively.',
+    label: 'Story Time',
+    description: 'A menu of listening games, starting with a short story followed by a live comprehension quiz.',
     icon: '♪',
-    status: 'coming-soon',
-    skills: ['Listening', 'Comprehension', 'Speaking'],
-    path: null,
+    status: 'ready',
+    skills: ['Listening', 'Comprehension', 'Recall'],
+    path: '/story-time',
     color: '#f6db96',
   },
   {
@@ -67,7 +67,7 @@ export default function ActivityMenu() {
       const roomCode = generateRoomCode()
       await initRoom(roomCode)
       navigate(`${activity.path}?room=${roomCode}`)
-    } else if (activity.id === 'reading' || activity.id === 'grammar' || activity.id === 'vocab') {
+    } else if (activity.id === 'reading' || activity.id === 'grammar' || activity.id === 'vocab' || activity.id === 'listen') {
       // For reading comprehension, grammar duel, and vocabulary builder,
       // navigate straight to the activity's own setup/menu screen.
       navigate(activity.path)

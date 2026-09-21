@@ -115,6 +115,10 @@ export default function StudentJoin() {
         console.log('Navigating to fill it in')
         sessionStorage.setItem(`player_${roomCode}`, JSON.stringify(me))
         navigate(`/fill-it-in?view=student&room=${roomCode}`)
+      } else if (joinActivityType === 'listen-recall') {
+        console.log('Navigating to listen and recall')
+        sessionStorage.setItem(`player_${roomCode}`, JSON.stringify(me))
+        navigate(`/listen-recall?view=student&room=${roomCode}`)
       } else {
         // For debate, continue with normal flow
         console.log('Continuing with debate flow')
@@ -161,7 +165,7 @@ export default function StudentJoin() {
 
   // For reading comprehension, grammar duel, and word builder, only show
   // setup screen — each activity has its own dedicated post-join view.
-  if (activity === 'reading-comprehension' || activity === 'grammar-duel' || activity === 'word-builder' || activity === 'synonyms' || activity === 'fill-it-in') {
+  if (activity === 'reading-comprehension' || activity === 'grammar-duel' || activity === 'word-builder' || activity === 'synonyms' || activity === 'fill-it-in' || activity === 'listen-recall') {
     return <SetupScreen roomCode={roomCode} name={name} setName={setName} onJoin={handleJoin} error={error} />
   }
 

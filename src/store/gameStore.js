@@ -695,3 +695,134 @@ export function buildFillItInLeaderboard(players, answers) {
   })
   return [...byId.values()].sort((a, b) => b.points - a.points)
 }
+
+
+// ─────────────────────────────────────────────────────────────────
+// Listen & Recall (Story Time sub-activity)
+// ─────────────────────────────────────────────────────────────────
+
+// Same Kahoot-style scoring as the other quiz activities: correct answers
+// earn more points the faster they're submitted, wrong answers score 0.
+export function computeListenRecallPoints(correct, timeTakenMs, secondsPerQuestion) {
+  return computeGrammarPoints(correct, timeTakenMs, secondsPerQuestion)
+}
+
+// Called once, when the host clicks "Begin Activity" in the waiting room —
+// starts the shared listening phase. Unlike the quiz activities, there's
+// no "current question" yet — every joined student narrates the same
+// story locally (Web Speech API) while a shared clock governs how long
+// the room stays in the listening phase before the host can move to Q&A.
+export async function startListenRecallListening(roomCode) {
+  return setState(roomCode, state => ({
+    ...state,
+    activityState: {
+      ...state.activityState,
+      status: 'listening',
+      listeningStartedAt: new Date().toISOString(),
+    },
+  }))
+}
+
+// Called when the host clicks "Start Questions" — either once the shared
+// listening clock runs out, or early if the class is ready. Kicks off
+// question 0 of the comprehension quiz.
+export async function beginListenRecallQuiz(roomCode) {
+  return setState(roomCode, state => ({
+    ...state,
+    activityState: {
+      ...state.activityState,
+      status: 'active',
+      currentQuestionIndex: 0,
+      questionStartedAt: new Date().toISOString(),
+    },
+  }))
+}
+
+// Called when the host clicks "Next Question" after a question's reveal.
+// Moves to the next question, or marks the round finished after the last one.
+export async function advanceListenRecallQuestion(roomCode) {
+  return setState(roomCode, state => {
+    const { activityState } = state
+    const nextIndex = activityState.currentQuestionIndex + 1
+    if (nextIndex >= (activityState.questions?.length || 0)) {
+      return { ...state, activityState: { ...activityState, status: 'finished' } }
+    }
+    return {
+      ...state,
+      activityState: {
+        ...activityState,
+        currentQuestionIndex: nextIndex,
+        questionStartedAt: new Date().toISOString(),
+      },
+    }
+  })
+}
+
+export async function submitListenRecallAnswer(roomCode, studentId, studentName, questionIndex, questionId, choiceIndex, correct, timeTakenMs, points) {
+  const { data, error } = await supabase
+    .from('listen_recall_answers')
+    .insert({
+      room_id: roomCode,
+      student_id: studentId,
+      student_name: studentName,
+      question_index: questionIndex,
+      question_id: questionId,
+      choice_index: choiceIndex,
+      correct,
+      time_taken_ms: timeTakenMs,
+      points,
+      answered_at: new Date().toISOString(),
+    })
+    .select()
+
+  if (error) console.error('Error submitting listen & recall answer:', error)
+  return data?.[0] || null
+}
+
+export async function getListenRecallAnswersForRoom(roomCode) {
+  const { data, error } = await supabase
+    .from('listen_recall_answers')
+    .select('*')
+    .eq('room_id', roomCode)
+    .order('answered_at', { ascending: true })
+
+  if (error) console.error('Error fetching listen & recall answers:', error)
+  return data || []
+}
+
+export function subscribeToListenRecallAnswers(roomCode, callback) {
+  const channel = supabase
+    .channel(`listen-recall:${roomCode}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'listen_recall_answers',
+        filter: `room_id=eq.${roomCode}`,
+      },
+      (payload) => {
+        if (payload.new) callback(payload.new)
+      }
+    )
+    .subscribe()
+
+  return () => supabase.removeChannel(channel)
+}
+
+// Shared by the host (full leaderboard + mini leaderboard) and each student
+// (their own rank) so both compute scores the same way.
+export function buildListenRecallLeaderboard(players, answers) {
+  const byId = new Map()
+  players.forEach(p => byId.set(p.id, { id: p.id, name: p.name, avatarId: p.avatarId, points: 0, correct: 0, answered: 0 }))
+  answers.forEach(a => {
+    if (!byId.has(a.student_id)) {
+      byId.set(a.student_id, { id: a.student_id, name: a.student_name, avatarId: null, points: 0, correct: 0, answered: 0 })
+    }
+    const entry = byId.get(a.student_id)
+    entry.points += a.points || 0
+    entry.answered += 1
+    if (a.correct) entry.correct += 1
+  })
+  return [...byId.values()].sort((a, b) => b.points - a.points)
+}

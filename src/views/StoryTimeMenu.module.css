@@ -1,0 +1,287 @@
+.root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #d66e55;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Background ─────────────────────────── */
+.orb1 {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(94,201,183,0.2) 0%, transparent 70%);
+  top: -150px;
+  left: -100px;
+  pointer-events: none;
+}
+
+.orb2 {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(27,58,92,0.15) 0%, transparent 70%);
+  bottom: -80px;
+  right: -60px;
+  pointer-events: none;
+}
+
+.pattern {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ── Main Layout ─────────────────────────── */
+.layout {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 960px;
+}
+
+/* ── Back Button ─────────────────────────── */
+.backButton {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #5ec9b7;
+  border: 3px solid #000000;
+  border-radius: 12px;
+  padding: 14px 24px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1B3A5C;
+  box-shadow: 4px 4px 0px #000000;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.backButton:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #000000;
+}
+
+.backButton:active {
+  transform: translate(4px, 4px);
+  box-shadow: 1px 1px 0px #000000;
+}
+
+/* ── Header (bubble + mascot) ────────────── */
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  justify-content: center;
+}
+
+.subtitleBubble {
+  position: relative;
+  z-index: 5;
+  background: #FDFAF4;
+  border: 3px solid #000000;
+  border-radius: 24px;
+  padding: 28px 40px;
+  box-shadow: 8px 8px 0px #000000;
+  font-family: var(--font-display);
+  font-size: 2.1rem;
+  font-weight: 700;
+  color: #1B3A5C;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.mascotWrap {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  filter: drop-shadow(0 6px 16px rgba(27,58,92,0.3));
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  margin-bottom: -136px;
+}
+
+.mascot {
+  width: 240px;
+  height: auto;
+  object-fit: contain;
+  transform: scaleX(-1);
+}
+
+/* ── Sub-Activity Grid ───────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  align-content: stretch;
+}
+
+/* ── Cards ───────────────────────────────── */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  border-radius: 18px;
+  text-align: left;
+  animation: popIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  border: 3px solid #000000;
+}
+
+.cardReady {
+  background: #FDFAF4;
+  cursor: pointer;
+  box-shadow: 5px 5px 0px #000000;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.cardReady:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0px #000000;
+}
+
+.cardReady:active {
+  transform: translate(4px, 4px);
+  box-shadow: 1px 1px 0px #000000;
+}
+
+.cardSoon {
+  background: rgba(253,250,244,0.35);
+  cursor: not-allowed;
+  box-shadow: 4px 4px 0px rgba(0,0,0,0.3);
+  opacity: 0.7;
+}
+
+/* ── Card Icon ───────────────────────────── */
+.cardIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 2.5px solid #000000;
+  box-shadow: 3px 3px 0px #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+/* ── Coming Soon Badge ───────────────────── */
+.soonBadge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #000000;
+  background: #f6db96;
+  border: 2px solid #000000;
+  padding: 3px 8px;
+  border-radius: 100px;
+  box-shadow: 2px 2px 0px #000000;
+}
+
+/* ── Card Title ──────────────────────────── */
+.cardTitle {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #000000;
+  letter-spacing: -0.01em;
+}
+
+/* ── Card Description ────────────────────── */
+.cardDesc {
+  font-size: 0.78rem;
+  color: #3a3a3a;
+  line-height: 1.5;
+  font-weight: 400;
+  flex: 1;
+}
+
+/* ── Skill Tags ──────────────────────────── */
+.skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 0.15rem;
+}
+
+.skill {
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #000000;
+  background: #5ec9b7;
+  border: 2px solid #000000;
+  border-radius: 100px;
+  padding: 2px 8px;
+  box-shadow: 2px 2px 0px #000000;
+}
+
+.cardSoon .skill {
+  background: #ccc;
+}
+
+/* ── Launch Row ──────────────────────────── */
+.launchRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 0.4rem;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #000000;
+  letter-spacing: 0.04em;
+}
+
+/* ── Animations ──────────────────────────── */
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ── Responsive ──────────────────────────── */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mascotWrap {
+    margin-bottom: -90px;
+  }
+
+  .mascot {
+    width: 160px;
+  }
+
+  .subtitleBubble {
+    padding: 18px 24px;
+    font-size: 1.4rem;
+    border-radius: 18px;
+  }
+}
